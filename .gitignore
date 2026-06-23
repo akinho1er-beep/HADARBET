@@ -1,0 +1,20 @@
+# Dépendances
+node_modules/
+
+# Données locales (seront recréées sur Railway)
+data/
+
+# Environnement local
+.env
+.env.local
+
+# Fichiers temporaires
+*.log
+/tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+.cache/
