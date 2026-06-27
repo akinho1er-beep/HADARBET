@@ -1,7 +1,17 @@
 const https = require('https');
 const http = require('http');
 let puppeteer = null;
-try { puppeteer = require('puppeteer'); } catch (_) { puppeteer = null; }
+let stealth = null;
+try { 
+  puppeteer = require('puppeteer'); 
+} catch (_) { puppeteer = null; }
+// puppeteer-extra-plugin-stealth : rend le navigateur indétectable par les anti-bots
+try {
+  const extra = require('puppeteer-extra');
+  const pluginStealth = require('puppeteer-extra-plugin-stealth');
+  extra.use(pluginStealth());
+  stealth = extra;
+} catch (_) { stealth = null; }
 
 class OneXBetScraper {
   constructor() {
@@ -9,14 +19,31 @@ class OneXBetScraper {
       '1xbet': process.env.ONEXBET_BASE_URL || process.env.ONE_XBET_BASE_URL || 'https://1xbet.bj'
     };
     this.browser = null;
+    // Proxy optionnel : PROXY_URL=http://user:pass@proxy:host:port
+    this.proxyUrl = process.env.PROXY_URL || '';
   }
 
   async init() {
-    if (!puppeteer) throw new Error('puppeteer non installé');
+    if (!puppeteer && !stealth) throw new Error('puppeteer non installé');
+    const lib = stealth || puppeteer;
     if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      const launchArgs = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--window-size=1920,1080'
+      ];
+      // Proxy optionnel pour contourner le blocage IP de 1xBet sur le cloud
+      if (this.proxyUrl) {
+        launchArgs.push(`--proxy-server=${this.proxyUrl}`);
+      }
+      this.browser = await lib.launch({
+        headless: stealth ? true : 'new',
+        args: launchArgs,
+        defaultViewport: { width: 1920, height: 1080 },
+        // Ignorer les erreurs HTTPS en environnement cloud
+        ignoreHTTPSErrors: true,
       });
     }
   }
