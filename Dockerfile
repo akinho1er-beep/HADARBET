@@ -1,24 +1,24 @@
-# ═══════════════════════════════════════════
-# Dockerfile HADAR BetAnalytics — Railway
-# Basé sur l'image officielle Puppeteer (inclut Chromium + dépendances)
-# ═══════════════════════════════════════════
 FROM ghcr.io/puppeteer/puppeteer:22
 
-# Dossiers de travail
+# Passer en root pour pouvoir copier et installer sans problème de permissions
+USER root
 WORKDIR /home/pptr/app
 
-# Copier les fichiers de dépendances
+# Copier les dépendances
 COPY package*.json ./
 
-# Installer les dépendances Node (sans Puppeteer car déjà dans l'image)
+# Installer (en ignorant les scripts et les devDependencies)
 ENV PUPPETEER_SKIP_DOWNLOAD=true
-RUN npm ci --only=production 2>/dev/null || npm install --only=production
+RUN npm install --omit=dev --no-save --unsafe-perm
 
-# Copier tout le code de l'application
+# Copier le reste du code
 COPY . .
 
-# Exposer le port
-EXPOSE 3000
+# Donner les droits à l'utilisateur pptruser
+RUN chown -R pptruser:pptruser /home/pptr/app
 
-# Démarrer le serveur
+# Revenir sur l'utilisateur normal de Puppeteer
+USER pptruser
+
+EXPOSE 3000
 CMD ["node", "server.js"]
