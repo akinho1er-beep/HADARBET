@@ -5514,8 +5514,8 @@ function hadarProTeamModel(game, data) {
   const newest = [...rows].sort((a,b)=>(b.n||0)-(a.n||0));
   const total = chrono.length;
   const cfg = game === 'fifa4x4'
-    ? { maxGoals: 10, k: 24, homeAdv: 35, drawMode: 'observed' }
-    : { maxGoals: 6,  k: 28, homeAdv: 45, drawMode: 'observed' };
+    ? { maxGoals: 12, k: 24, homeAdv: 35, drawMode: 'observed' }
+    : { maxGoals: 8,  k: 28, homeAdv: 45, drawMode: 'observed' };
 
   const ratings = {};
   const stats = {};
@@ -5605,6 +5605,37 @@ function hadarProTeamModel(game, data) {
 
   scoreProbs.sort((a,b)=>b.pr-a.pr);
   const globalBestScore = scoreProbs[0] || { hg: Math.round(lambdaH), ag: Math.round(lambdaA), pr: 0 };
+
+  // ── DATA-DRIVEN SCORE : utiliser les VRAIS scores observés ──
+  // Au lieu de ne se fier qu'à la distribution théorique de Poisson,
+  // on extrait les scores réellement observés entre ces deux équipes
+  // et dans le jeu en général pour produire une prédiction authentique.
+  const h2hScores = []; // scores directs entre ces 2 équipes
+  const allScores = []; // tous les scores du jeu
+  chrono.forEach(r => {
+    const [hg, ag] = hadarProSafeScore(r.score);
+    allScores.push({ hg, ag, total: hg + ag, diff: hg - ag });
+    if ((r.home === home && r.away === away) || (r.home === away && r.away === home)) {
+      const isHome = r.home === home;
+      h2hScores.push({ hg: isHome ? hg : ag, ag: isHome ? ag : hg });
+    }
+  });
+
+  // Top 5 scores les plus fréquents dans le jeu
+  const scoreFreq = {};
+  allScores.forEach(s => {
+    const k = `${s.hg}:${s.ag}`;
+    scoreFreq[k] = (scoreFreq[k] || 0) + 1;
+  });
+  const topObservedScores = Object.entries(scoreFreq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([k, count]) => {
+      const [hg, ag] = k.split(':').map(Number);
+      return { hg, ag, freq: count };
+    });
+
+  // Calculer le vainqueur probable
   const probs = [pHome, pDraw, pAway].sort((a,b)=>b-a);
   const topProb = probs[0], secondProb = probs[1] || 0;
   const dataReliability = Math.min(1, total / 120);
@@ -5613,11 +5644,42 @@ function hadarProTeamModel(game, data) {
   const confidence = Math.round(hadarProClamp(52 + margin * 70 + dataReliability * 10 + teamReliability * 8, 52, 88));
 
   const winner = pHome >= pDraw && pHome >= pAway ? home : pAway >= pDraw ? away : 'Match nul';
-  // Score affiché cohérent avec l'issue la plus probable.
-  const bestScore = scoreProbs.find(s =>
-    winner === 'Match nul' ? s.hg === s.ag :
-    winner === home ? s.hg > s.ag : s.hg < s.ag
-  ) || globalBestScore;
+
+  // Score de base : on combine Poisson (théorie) + scores observés (réalité)
+  let bestScore;
+
+  // 1) Si on a des confrontations directes H2H, les utiliser en priorité
+  if (h2hScores.length >= 2) {
+    const h2hAvgH = h2hScores.reduce((a, s) => a + s.hg, 0) / h2hScores.length;
+    const h2hAvgA = h2hScores.reduce((a, s) => a + s.ag, 0) / h2hScores.length;
+    bestScore = {
+      hg: Math.max(0, Math.round(h2hAvgH * 0.6 + lambdaH * 0.4)),
+      ag: Math.max(0, Math.round(h2hAvgA * 0.6 + lambdaA * 0.4)),
+      pr: 0.1
+    };
+  } else {
+    // 2) Sinon, utiliser le score Poisson le plus probable cohérent avec l'issue
+    bestScore = scoreProbs.find(s =>
+      winner === 'Match nul' ? s.hg === s.ag :
+      winner === home ? s.hg > s.ag : s.hg < s.ag
+    ) || globalBestScore;
+
+    // 3) Ajuster vers les scores les plus fréquemment observés dans le jeu
+    if (topObservedScores.length > 0) {
+      const topFreq = topObservedScores[0];
+      const freqWeight = Math.min(0.4, topFreq.freq / total); // max 40% d'influence
+      bestScore = {
+        hg: Math.max(0, Math.round(bestScore.hg * (1 - freqWeight) + topFreq.hg * freqWeight)),
+        ag: Math.max(0, Math.round(bestScore.ag * (1 - freqWeight) + topFreq.ag * freqWeight)),
+        pr: bestScore.pr
+      };
+    }
+  }
+
+  // Garantie cohérence avec le vainqueur prédit
+  if (winner === home && bestScore.hg <= bestScore.ag) bestScore.hg = bestScore.ag + 1;
+  if (winner === away && bestScore.ag <= bestScore.hg) bestScore.ag = bestScore.hg + 1;
+
   const prediction = winner === 'Match nul'
     ? `${home} ${bestScore.hg} - ${bestScore.ag} ${away} · nul possible`
     : `${home} ${bestScore.hg} - ${bestScore.ag} ${away} · avantage ${winner}`;
@@ -9045,6 +9107,5 @@ window.addEventListener('appinstalled', () => {
   deferredPrompt = null;
 });
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0d709d38c4476c6',t:'MTc4MTc1MTU3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0dc897b9bc1ad4f',t:'MTc4MTgwOTIyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0d709d38c4476c6',t:'MTc4MTc1MTU3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0dc897b9bc1ad4f',t:'MTc4MTgwOTIyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
