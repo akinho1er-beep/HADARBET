@@ -3886,7 +3886,9 @@ function loadDemoData() {
     }
   });
 }
-loadDemoData();
+// Mode démo SUPPRIMÉ — l'app n'affiche que des vraies données serveur.
+// Si le serveur n'a pas encore de données, un message "En attente" s'affiche.
+// loadDemoData();
 let currentGame      = 'penalty18';
 let currentStatGame  = 'penalty18';
 let currentPronoGame = 'penalty18';
@@ -7884,7 +7886,23 @@ async function checkServer() {
     const data = await res.json();
     if (data.status === 'online') {
       liveMode = true;
-      setLiveIndicator(true);
+      // Le badge passe au vert UNIQUEMENT si le serveur a des données réelles
+      const totalData = Object.values(data.counts || {}).reduce((a, b) => a + b, 0);
+      setLiveIndicator(totalData > 0);
+      // Charge immédiatement les données de tous les jeux
+      await fetchAndUpdate('baccara');
+      await fetchAndUpdate('penalty18');
+      await fetchAndUpdate('penalty22');
+      await fetchAndUpdate('jeu21');
+      await fetchAndUpdate('fifa4x4');
+      await fetchAndUpdate('aviator');
+      await fetchUpcomingAndUpdate('fifa4x4');
+      await fetchUpcomingAndUpdate('penalty18');
+      await fetchUpcomingAndUpdate('penalty22');
+      // Rafraîchit l'affichage
+      renderResults();
+      renderStats();
+      renderFixtures();
       startPolling();
     }
   } catch {
@@ -7899,10 +7917,10 @@ function setLiveIndicator(online) {
   if (!badge) return;
   if (online) {
     badge.style.cssText = 'background:rgba(0,229,160,0.12);border-color:rgba(0,229,160,0.3);color:var(--accent)';
-    badge.innerHTML = '<div class="live-dot" style="background:var(--accent)"></div> CONNECTÉ';
+    badge.innerHTML = '<div class="live-dot" style="background:var(--accent)"></div> LIVE';
   } else {
     badge.style.cssText = 'background:rgba(255,77,109,0.12);border-color:rgba(255,77,109,0.3);color:var(--red)';
-    badge.innerHTML = '<div class="live-dot"></div> DÉMO';
+    badge.innerHTML = '<div class="live-dot"></div> HORS-LIGNE';
   }
 }
 
@@ -9028,5 +9046,5 @@ window.addEventListener('appinstalled', () => {
 });
 </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0d709d38c4476c6',t:'MTc4MTc1MTU3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0dc897b9bc1ad4f',t:'MTc4MTgwOTIyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a124a38359494052',t:'MTc4MjU2NTI2OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
