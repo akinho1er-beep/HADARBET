@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 
 // Assure que le dossier data/ existe
 if (!fs.existsSync(DATA_DIR)) {
@@ -208,41 +208,30 @@ const storage = {
   seedAdmin() {
     const acc = this.getAccounts();
     const adminUser = process.env.ADMIN_USER || 'HADAR_ADMIN';
-    const envPass     = process.env.ADMIN_PASS || null;   // null = non défini
-    const defaultPass = 'Sh@lom12541';
+    const envPass     = process.env.ADMIN_PASS || 'Sh@lom12541'; // TOUJOURS utiliser ADMIN_PASS
 
-    // Cas 1 : création initiale
-    if (!acc[adminUser]) {
+    // Création ou resynchronisation : ADMIN_PASS est TOUJOURS la source de vérité.
+    // À chaque démarrage, le mot de passe admin = ADMIN_PASS.
+    const existing = acc[adminUser];
+    const needCreate = !existing;
+    const needUpdate = existing && !verifyPassword(envPass, existing.pass);
+
+    if (needCreate || needUpdate) {
       acc[adminUser] = {
         username: adminUser,
-        pass: hashPassword(envPass || defaultPass),
+        pass: hashPassword(envPass),
         role: 'admin',
         active: true,
-        created: new Date().toLocaleDateString('fr-FR'),
-        lastLogin: null
+        created: existing?.created || new Date().toLocaleDateString('fr-FR'),
+        lastLogin: existing?.lastLogin || null
       };
       this.saveAccounts(acc);
-      console.log(`[storage] ✅ Compte admin initialisé : ${adminUser}`);
-      if (!envPass) {
-        console.warn('[storage] ⚠️  ADMIN_PASS non défini : mot de passe par défaut utilisé.');
-        console.warn('[storage]    Définis ADMIN_USER et ADMIN_PASS (variables d\'environnement) pour le changer.');
-      }
-      return acc[adminUser];
-    }
-
-    // Cas 2 : admin existant. Si ADMIN_PASS est défini, il est TOUJOURS prioritaire :
-    // on resynchronise le mot de passe à chaque démarrage. Ainsi, changer ADMIN_PASS
-    // et redémarrer suffit à mettre à jour le mot de passe admin (reset instantané).
-    if (envPass) {
-      const matches = verifyPassword(envPass, acc[adminUser].pass);
-      if (!matches) {
-        acc[adminUser].pass = hashPassword(envPass);
-        acc[adminUser].username = adminUser;
-        this.saveAccounts(acc);
-        console.log(`[storage] 🔑 Mot de passe admin resynchronisé depuis ADMIN_PASS.`);
+      if (needCreate) {
+        console.log(`[storage] ✅ Compte admin créé : ${adminUser}`);
+      } else {
+        console.log(`[storage] 🔑 Mot de passe admin synchronisé depuis ADMIN_PASS.`);
       }
     }
-
     return acc[adminUser];
   }
 };

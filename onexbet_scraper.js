@@ -40,9 +40,9 @@ class OneXBetScraper {
       }
       this.browser = await lib.launch({
         headless: stealth ? true : 'new',
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
         args: launchArgs,
         defaultViewport: { width: 1920, height: 1080 },
-        // Ignorer les erreurs HTTPS en environnement cloud
         ignoreHTTPSErrors: true,
       });
     }
