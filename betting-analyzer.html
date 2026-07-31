@@ -7989,21 +7989,26 @@ function setLiveIndicator(online) {
 function startPolling() {
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(async () => {
+    let successCount = 0;
     try {
-      await fetchAndUpdate('baccara');
-      await fetchAndUpdate('penalty18');
-      await fetchAndUpdate('penalty22');
-      await fetchAndUpdate('jeu21');
-      await fetchAndUpdate('fifa4x4');
-      await fetchAndUpdate('aviator');
+      if (await fetchAndUpdate('baccara'))   successCount++;
+      if (await fetchAndUpdate('penalty18')) successCount++;
+      if (await fetchAndUpdate('penalty22')) successCount++;
+      if (await fetchAndUpdate('jeu21'))     successCount++;
+      if (await fetchAndUpdate('fifa4x4'))   successCount++;
+      if (await fetchAndUpdate('aviator'))   successCount++;
       await fetchUpcomingAndUpdate('fifa4x4');
       await fetchUpcomingAndUpdate('penalty18');
       await fetchUpcomingAndUpdate('penalty22');
+      // Si au moins 1 jeu a reçu des données, tout va bien
+      if (successCount > 0) {
+        fetchAndUpdate._errors = 0;
+      }
     } catch {
       liveMode = false;
       setLiveIndicator(false);
       clearInterval(pollInterval);
-      setTimeout(checkServer, 6000);
+      setTimeout(checkServer, 5000);
     }
   }, 3000);
 }
@@ -8295,7 +8300,7 @@ async function fetchAndUpdate(game) {
     const res = await fetch(`${API}/results/${game}?limit=${DATA_FETCH_LIMIT}&t=${Date.now()}`);
     const data = await res.json();
     if (!data || !data.length) {
-      return;
+      return false;
     }
     // Log de débogage : confirme la réception des données serveur
     console.log(`[fetchAndUpdate] ${game}: ${data.length} résultats reçus du serveur`);
@@ -8357,14 +8362,23 @@ async function fetchAndUpdate(game) {
   }
   if (currentGame === game) renderResults();
   if (currentStatGame === game) renderStats();
-  // Rafraîchit l'onglet Rencontres quand les données du jeu affiché arrivent
   if (game === currentFixtureGame && typeof renderFixtures === 'function') renderFixtures();
-  // Rafraîchit le dashboard pour les KPIs/graphes
   if (typeof renderDashboard === 'function') {
-    try { renderDashboard(); } catch(e) { /* dashboard pas encore prêt */ }
+    try { renderDashboard(); } catch(e) {}
   }
+  return true;
   } catch (e) {
     console.warn(`[fetchAndUpdate] Erreur pour ${game}:`, e.message);
+    // Compteur d'erreurs consécutives — si trop d'échecs, on relance checkServer
+    fetchAndUpdate._errors = (fetchAndUpdate._errors || 0) + 1;
+    if (fetchAndUpdate._errors > 5) {
+      console.warn('[fetchAndUpdate] Trop d\'erreurs — reconnexion au serveur...');
+      fetchAndUpdate._errors = 0;
+      liveMode = false;
+      setLiveIndicator(false);
+      if (pollInterval) clearInterval(pollInterval);
+      setTimeout(checkServer, 3000);
+    }
   }
 }
 </script>
@@ -9107,6 +9121,6 @@ window.addEventListener('appinstalled', () => {
   deferredPrompt = null;
 });
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0d709d38c4476c6',t:'MTc4MTc1MTU3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0dc897b9bc1ad4f',t:'MTc4MTgwOTIyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2365b2fc93a0b4e',t:'MTc4NTQzNTQwNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0d709d38c4476c6',t:'MTc4MTc1MTU3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0dc897b9bc1ad4f',t:'MTc4MTgwOTIyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a23becf8bbbb9cd3',t:'MTc4NTQ5MzgwNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
