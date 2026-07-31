@@ -2,16 +2,21 @@ const https = require('https');
 const http = require('http');
 let puppeteer = null;
 let stealth = null;
-try { 
-  puppeteer = require('puppeteer'); 
-} catch (_) { puppeteer = null; }
-// puppeteer-extra-plugin-stealth : rend le navigateur indétectable par les anti-bots
-try {
-  const extra = require('puppeteer-extra');
-  const pluginStealth = require('puppeteer-extra-plugin-stealth');
-  extra.use(pluginStealth());
-  stealth = extra;
-} catch (_) { stealth = null; }
+// Puppeteer est désactivé sur le cloud (Railway) car :
+// 1. 1xBet bloque les IP cloud de toute façon
+// 2. Chromium consomme trop de mémoire → crash du serveur
+// On ne l'active que si PUPPETEER_ENABLED=true (utile en local seulement).
+if (process.env.PUPPETEER_ENABLED === 'true') {
+  try { 
+    puppeteer = require('puppeteer'); 
+  } catch (_) { puppeteer = null; }
+  try {
+    const extra = require('puppeteer-extra');
+    const pluginStealth = require('puppeteer-extra-plugin-stealth');
+    extra.use(pluginStealth());
+    stealth = extra;
+  } catch (_) { stealth = null; }
+}
 
 class OneXBetScraper {
   constructor() {

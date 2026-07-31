@@ -677,6 +677,18 @@ if (!process.env.ANTHROPIC_API_KEY) {
 
 console.log('🔄 Récupération initiale...');
 
+// Nettoyage des anciennes données si CLEAR_DATA=1 (force un fresh start)
+if (process.env.CLEAR_DATA === '1') {
+  console.log('🧹 CLEAR_DATA activé — nettoyage des anciennes données...');
+  Object.keys(CHANNELS).forEach(game => {
+    const results = storage.getResults(game);
+    if (results.length > 0) {
+      storage.setResults(game, []);
+      console.log(`🧹 ${game}: ${results.length} anciens résultats effacés.`);
+    }
+  });
+}
+
 // Amorce du compte admin (au premier démarrage) depuis storage.js
 storage.seedAdmin();
 
