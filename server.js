@@ -539,7 +539,12 @@ async function updateChannel(key, username) {
   try {
     const html = await fetchChannelHTML(username);
     if (!html || html.length < 100) {
-      console.warn(`[${key}] HTML vide ou trop court`);
+      console.warn(`[${key}] HTML vide ou trop court (${html ? html.length : 0} chars)`);
+      return;
+    }
+    // Détecter si Telegram a bloqué la requête (page de redirect ou captcha)
+    if (html.includes('tgme_page_status') || html.includes('Too Many Requests') || html.includes('<title>429')) {
+      console.warn(`[${key}] ⚠️ Telegram a bloqué la requête (rate-limit). Réessai au prochain cycle.`);
       return;
     }
 
@@ -606,11 +611,19 @@ async function updateChannel(key, username) {
 }
 
 // ── Polling ──────────────────────────────────────────────────
+// Délai entre chaque canal Telegram (évite le rate-limiting sur le cloud)
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
 async function pollAll() {
   // Itère dynamiquement sur tous les canaux définis dans CHANNELS.
-  // Ainsi, tout nouveau jeu ajouté à CHANNELS est automatiquement interrogé.
-  for (const [key, username] of Object.entries(CHANNELS)) {
+  // On ajoute un délai de 3 secondes entre chaque canal pour éviter que
+  // Telegram ne bloque les requêtes (rate-limiting sur IP cloud comme Railway).
+  const entries = Object.entries(CHANNELS);
+  for (let i = 0; i < entries.length; i++) {
+    const [key, username] = entries[i];
     await updateChannel(key, username);
+    // Pause de 3 secondes entre chaque canal (sauf après le dernier)
+    if (i < entries.length - 1) await sleep(3000);
   }
 }
 
@@ -618,13 +631,22 @@ async function pollAll() {
 // ── Actualisation des rencontres programmées bookmaker ────────────
 async function updateUpcoming(game) {
   if (!UPCOMING_GAMES.includes(game)) return [];
+  // Sur Railway (cloud), 1xBet bloque l'IP. On tente quand même au cas où,
+  // mais on ne laisse pas Puppeteer tourner trop longtemps pour éviter les crashs mémoire.
   const collected = [];
   for (const source of BOOKMAKER_SOURCES) {
     try {
-      const rows = await scraper.fetchUpcoming(game, source);
+      // Timeout de 10 secondes maximum pour éviter de bloquer le serveur
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 10000)
+      );
+      const rows = await Promise.race([
+        scraper.fetchUpcoming(game, source),
+        timeoutPromise
+      ]);
       rows.forEach(r => collected.push({ ...r, bookmaker: r.bookmaker || source }));
     } catch (e) {
-      console.warn(`⚠️ [${game}] Upcoming ${source} indisponible: ${e.message}`);
+      // Erreur silencieuse — 1xBet bloque ou timeout
     }
   }
   upcomingFixtures[game] = mergeUpcomingFixtures(game, collected);
@@ -660,9 +682,10 @@ storage.seedAdmin();
 
 pollAll();
 pollUpcomingAll();
-setInterval(pollAll, 10000);
-// Calendrier bookmaker : rafraîchissement automatique séparé.
-setInterval(pollUpcomingAll, 15000);
+// Polling Telegram toutes les 30 secondes (plus lent pour éviter la surcharge mémoire sur Railway)
+setInterval(pollAll, 30000);
+// Calendrier bookmaker : toutes les 60 secondes (Puppeteer est lourd, on l'appelle moins souvent).
+setInterval(pollUpcomingAll, 60000);
 
 // ── Logique de Synchronisation (Extrait pour être réutilisable) ──────────────────
 async function syncGame(game) {
