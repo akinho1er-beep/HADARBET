@@ -6809,6 +6809,54 @@ function analyzeLocal(game, data) {
   return [];
 }
 
+// ── GROQ AI : analyse approfondie réutilisable (flux normal + H2H) ──
+async function runGroqAnalysis(container, game, data, localSummary) {
+  if (typeof apiFetch !== 'function') return;
+  try {
+    const groqRes = await apiFetch('/api/groq-analyze', {
+      method: 'POST',
+      body: JSON.stringify({ game, data: data.slice(0, 30), localAnalysis: localSummary || '' })
+    });
+    if (!groqRes.ok) return;
+    const groqData = await groqRes.json();
+    if (!groqData.enhanced || !groqData.groq) {
+      console.log('[Groq] Non disponible:', groqData.message || 'reponse non enhanced');
+      return;
+    }
+    const g = groqData.groq;
+    const riskColor = g.risk && g.risk.toLowerCase().includes('faible') ? 'var(--accent)' :
+                       g.risk && g.risk.toLowerCase().includes('élev') ? 'var(--red)' : 'var(--gold)';
+    const groqHtml = `
+      <div class="prono-card" style="border:2px solid var(--accent-2);background:linear-gradient(135deg,rgba(0,229,255,0.06),rgba(123,94,167,0.06));margin-top:12px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--accent-2),var(--accent2));color:#000;font-size:9px;font-weight:800;padding:3px 10px;border-radius:0 0 0 8px;letter-spacing:1px">⚡ GROQ AI · LLAMA 3.3 70B</div>
+        <div style="margin-top:16px">
+          <div class="prono-game-tag">🧠 Analyse neuro-cognitive approfondie</div>
+          <div style="font-size:17px;font-weight:800;color:var(--text-bright);margin:8px 0;line-height:1.4">${g.prediction || '—'}</div>
+          <div style="display:flex;align-items:center;gap:12px;margin:12px 0">
+            <div class="confidence ${g.confidence >= 80 ? 'high' : g.confidence >= 68 ? 'mid' : 'low'}" style="font-size:24px">${g.confidence || '—'}%</div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Confiance Groq AI</div>
+              <div style="font-size:12px;color:${riskColor};font-weight:600;margin-top:2px">${g.risk || 'Risque modéré'}</div>
+            </div>
+          </div>
+          <div class="prono-bar-track"><div class="prono-bar-fill" style="width:${g.confidence || 0}%;background:linear-gradient(90deg,var(--accent-2),var(--accent2))"></div></div>
+          <div class="prono-reasoning" style="margin-top:12px;font-size:13px;line-height:1.7">🔬 ${g.analysis || ''}</div>
+          ${g.strategy ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(0,229,160,0.06);border-left:3px solid var(--accent);border-radius:6px;font-size:12px;line-height:1.6"><strong style="color:var(--accent)">🎯 Stratégie :</strong> ${g.strategy}</div>` : ''}
+          ${g.signal ? `<div style="margin-top:8px;padding:10px 12px;background:rgba(0,229,255,0.06);border-left:3px solid var(--accent-2);border-radius:6px;font-size:12px;line-height:1.6"><strong style="color:var(--accent-2)">💎 Signal détecté :</strong> ${g.signal}</div>` : ''}
+        </div>
+      </div>`;
+    const hadarCard = container.querySelector('.hadar-card');
+    if (hadarCard) {
+      hadarCard.insertAdjacentHTML('afterend', groqHtml);
+    } else {
+      container.insertAdjacentHTML('afterbegin', groqHtml);
+    }
+    showToast('⚡ Groq AI · Analyse approfondie ajoutée ✨');
+  } catch (groqErr) {
+    console.log('[Groq] Non disponible:', groqErr.message);
+  }
+}
+
 async function runAnalysis() {
   const btn = document.getElementById('analyze-btn');
   const container = document.getElementById('prono-container');
@@ -6871,6 +6919,9 @@ async function runAnalysis() {
         try { renderDashboard(); } catch(e) { console.warn('[dashboard]', e); }
       }
       showToast(`IA dédiée générée pour ${selectedCtx.home} vs ${selectedCtx.away} ✨`);
+      // ── GROQ AI : analyse approfondie H2H (était absente — bug du return anticipé) ──
+      const h2hGroqSummary = `${dedicated.resultLabel} · score ${dedicated.score} (${dedicated.confidenceScore}%)`;
+      await runGroqAnalysis(container, currentPronoGame, data, h2hGroqSummary);
       btn.disabled = false;
       btn.innerHTML = '🔍 Relancer l\'analyse';
       return;
@@ -6933,52 +6984,8 @@ async function runAnalysis() {
     showToast('HADAR AI · Prédiction locale générée ✨');
 
     // ── GROQ AI : analyse approfondie en complément ──
-    if (typeof apiFetch === 'function') {
-      try {
-        const localSummary = hadarResult ? hadarResult.prediction + ' (' + hadarResult.confidence + '%)' : pronos[0]?.prediction || '';
-        const groqRes = await apiFetch('/api/groq-analyze', {
-          method: 'POST',
-          body: JSON.stringify({ game: currentPronoGame, data: data.slice(0, 30), localAnalysis: localSummary })
-        });
-        if (groqRes.ok) {
-          const groqData = await groqRes.json();
-          if (groqData.enhanced && groqData.groq) {
-            const g = groqData.groq;
-            const riskColor = g.risk && g.risk.toLowerCase().includes('faible') ? 'var(--accent)' :
-                               g.risk && g.risk.toLowerCase().includes('élev') ? 'var(--red)' : 'var(--gold)';
-            // Insère la carte Groq APRÈS la carte HADAR (en haut)
-            const hadarCard = container.querySelector('.hadar-card');
-            const groqHtml = `
-              <div class="prono-card" style="border:2px solid var(--accent-2);background:linear-gradient(135deg,rgba(0,229,255,0.06),rgba(123,94,167,0.06));margin-top:12px;position:relative;overflow:hidden">
-                <div style="position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--accent-2),var(--accent2));color:#000;font-size:9px;font-weight:800;padding:3px 10px;border-radius:0 0 0 8px;letter-spacing:1px">⚡ GROQ AI · LLAMA 3.3 70B</div>
-                <div style="margin-top:16px">
-                  <div class="prono-game-tag">🧠 Analyse neuro-cognitive approfondie</div>
-                  <div style="font-size:17px;font-weight:800;color:var(--text-bright);margin:8px 0;line-height:1.4">${g.prediction || '—'}</div>
-                  <div style="display:flex;align-items:center;gap:12px;margin:12px 0">
-                    <div class="confidence ${g.confidence >= 80 ? 'high' : g.confidence >= 68 ? 'mid' : 'low'}" style="font-size:24px">${g.confidence || '—'}%</div>
-                    <div style="flex:1">
-                      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Confiance Groq AI</div>
-                      <div style="font-size:12px;color:${riskColor};font-weight:600;margin-top:2px">${g.risk || 'Risque modéré'}</div>
-                    </div>
-                  </div>
-                  <div class="prono-bar-track"><div class="prono-bar-fill" style="width:${g.confidence || 0}%;background:linear-gradient(90deg,var(--accent-2),var(--accent2))"></div></div>
-                  <div class="prono-reasoning" style="margin-top:12px;font-size:13px;line-height:1.7">🔬 ${g.analysis || ''}</div>
-                  ${g.strategy ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(0,229,160,0.06);border-left:3px solid var(--accent);border-radius:6px;font-size:12px;line-height:1.6"><strong style="color:var(--accent)">🎯 Stratégie :</strong> ${g.strategy}</div>` : ''}
-                  ${g.signal ? `<div style="margin-top:8px;padding:10px 12px;background:rgba(0,229,255,0.06);border-left:3px solid var(--accent-2);border-radius:6px;font-size:12px;line-height:1.6"><strong style="color:var(--accent-2)">💎 Signal détecté :</strong> ${g.signal}</div>` : ''}
-                </div>
-              </div>`;
-            if (hadarCard) {
-              hadarCard.insertAdjacentHTML('afterend', groqHtml);
-            } else {
-              container.insertAdjacentHTML('afterbegin', groqHtml);
-            }
-            showToast('⚡ Groq AI · Analyse approfondie ajoutée ✨');
-          }
-        }
-      } catch (groqErr) {
-        console.log('[Groq] Non disponible:', groqErr.message);
-      }
-    }
+    const groqSummary = hadarResult ? hadarResult.prediction + ' (' + hadarResult.confidence + '%)' : (pronos[0]?.prediction || '');
+    await runGroqAnalysis(container, currentPronoGame, data, groqSummary);
 
   } catch (e) {
     console.error('[runAnalysis]', e);
@@ -8983,6 +8990,6 @@ window.addEventListener('appinstalled', () => {
   deferredPrompt = null;
 });
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0d709d38c4476c6',t:'MTc4MTc1MTU3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0dc897b9bc1ad4f',t:'MTc4MTgwOTIyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a281cc9f6f656668',t:'MTc4NjIyNjQ4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0d709d38c4476c6',t:'MTc4MTc1MTU3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0dc897b9bc1ad4f',t:'MTc4MTgwOTIyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a28211ebe8cb6644',t:'MTc4NjIyOTMyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
