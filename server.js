@@ -1168,6 +1168,163 @@ app.get('/api/admin/accounts/export.csv', adminMiddleware, (req, res) => {
   res.send('\uFEFF' + csv);
 });
 
+// ══════════════════════════════════════════════════════════════════
+//  GROQ AI — Analyse prédictive avancée (Llama 3.3 70B)
+//  Complément du moteur local HADAR AI. Nécessite GROQ_API_KEY.
+//  Plan gratuit : https://console.groq.com
+// ══════════════════════════════════════════════════════════════════
+
+app.post('/api/groq-analyze', async (req, res) => {
+  const { game, data, localAnalysis } = req.body || {};
+
+  if (!game || !data || !data.length) {
+    return res.status(400).json({ error: 'Données manquantes.' });
+  }
+
+  const groqKey = process.env.GROQ_API_KEY || '';
+  if (!groqKey) {
+    return res.status(200).json({
+      enhanced: false,
+      message: 'GROQ_API_KEY non configurée. Analyse locale uniquement.'
+    });
+  }
+
+  // Préparer un résumé compact des données (max 30 derniers résultats)
+  const recent = data.slice(0, Math.min(30, data.length));
+  let dataSummary = '';
+
+  if (game === 'baccara') {
+    dataSummary = recent.map(r => `#${r.n}: Player ${r.playerScore ?? r.player} vs Banker ${r.bankerScore ?? r.banker}${r.natural ? ' (R)' : ''}`).join('\n');
+  } else if (game === 'jeu21') {
+    dataSummary = recent.map(r => `#${r.n}: ${r.player} vs ${r.dealer} → ${r.result}`).join('\n');
+  } else if (game === 'aviator' || game === 'crash') {
+    dataSummary = recent.map(r => `#${r.n}: ${r.multiplier}x`).join('\n');
+  } else {
+    // Penalty / FIFA 4×4
+    dataSummary = recent.map(r => `#${r.n}: ${r.home} ${r.score} ${r.away}`).join('\n');
+  }
+
+  // Statistiques de base pour guider l'IA
+  const stats = (() => {
+    if (game === 'aviator' || game === 'crash') {
+      const mults = data.map(r => Number(r.multiplier)).filter(Number.isFinite);
+      const avg = mults.reduce((a,b)=>a+b,0) / mults.length;
+      const low = mults.filter(m => m < 2).length;
+      const high = mults.filter(m => m >= 10).length;
+      return `Moyenne: ${avg.toFixed(2)}x | <2x: ${Math.round(low/mults.length*100)}% | >10x: ${Math.round(high/mults.length*100)}%`;
+    } else if (game === 'baccara') {
+      let p = 0, b = 0, t = 0;
+      data.forEach(r => { const ps = r.playerScore ?? r.player; const bs = r.bankerScore ?? r.banker; if (ps > bs) p++; else if (bs > ps) b++; else t++; });
+      return `Player: ${p} | Banker: ${b} | Tie: ${t} / ${data.length}`;
+    } else if (game === 'jeu21') {
+      let w = 0, l = 0, pu = 0;
+      data.forEach(r => { const res = String(r.result).toUpperCase(); if (res==='WIN') w++; else if (res==='LOSE') l++; else pu++; });
+      return `WIN: ${w} | LOSE: ${l} | PUSH: ${pu} / ${data.length}`;
+    } else {
+      let hw = 0, aw = 0, dr = 0;
+      data.forEach(r => { const [h,a] = (r.score||'0:0').split(':').map(Number); if(h>a) hw++; else if(a>h) aw++; else dr++; });
+      return `Domicile: ${hw} | Extérieur: ${aw} | Nuls: ${dr} / ${data.length}`;
+    }
+  })();
+
+  const gameLabel = game === 'penalty18' ? 'FIFA Penalty 18' :
+                    game === 'penalty22' ? 'FIFA Penalty 22' :
+                    game === 'fifa4x4' ? 'FIFA 4×4 FC24 England Championship' :
+                    game === 'baccara' ? 'Baccara casino' :
+                    game === 'jeu21' ? 'Blackjack (Jeu 21)' :
+                    game === 'aviator' ? 'Aviator (crash game)' : game;
+
+  const prompt = `Tu es HADAR AI, un moteur d'analyse prédictive expert pour les jeux de hasard virtuels. Analyse les données suivantes du jeu "${gameLabel}" et fournis une prédiction détaillée.
+
+STATISTIQUES GLOBALES: ${stats}
+
+30 DERNIERS RÉSULTATS (du plus récent au plus ancien):
+${dataSummary}
+
+${localAnalysis ? `ANALYSE LOCALE HADAR (déjà calculée): ${localAnalysis}` : ''}
+
+INSTRUCTIONS:
+1. Analyse les tendances, patterns, séries, et écarts statistiques
+2. Propose UNE prédiction concrète pour le prochain résultat (sois précis et spécifique au jeu)
+3. Donne un niveau de confiance entre 60% et 95% (justifie)
+4. Recommande une stratégie de mise/cash-out adaptée
+5. Identifie un signal fort ou un pattern remarquable que les statistiques simples pourraient manquer
+
+Format de réponse (OBLIGATOIRE, en JSON valide):
+{
+  "prediction": "ta prédiction concrète en 1 phrase",
+  "confidence": 78,
+  "analysis": "analyse approfondie en 3-4 phrases (tendances, patterns, signaux cachés)",
+  "strategy": "recommandation stratégique en 1-2 phrases",
+  "signal": "un insight remarquable ou un pattern caché que tu as détecté",
+  "risk": "niveau de risque: Faible/Moyen/Élevé + raison en 1 phrase"
+}
+
+Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
+
+  try {
+    const body = JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: 'Tu es HADAR AI, un analyste prédictif expert. Tu réponds toujours en français et UNIQUEMENT au format JSON demandé. Tes analyses sont profondes, nuancées et professionnelles.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 800
+    });
+
+    const apiReq = https.request({
+      hostname: 'api.groq.com',
+      path: '/openai/v1/chat/completions',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+        'Authorization': `Bearer ${groqKey}`
+      }
+    }, (apiRes) => {
+      let rawData = '';
+      apiRes.on('data', chunk => rawData += chunk);
+      apiRes.on('end', () => {
+        try {
+          const parsed = JSON.parse(rawData);
+          if (parsed.error) {
+            console.error('[Groq] Erreur:', parsed.error.message);
+            return res.status(200).json({ enhanced: false, message: parsed.error.message });
+          }
+          const text = parsed.choices?.[0]?.message?.content || '';
+          // Extraire le JSON de la réponse
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const result = JSON.parse(jsonMatch[0]);
+            console.log('[Groq] ✅ Analyse générée pour', game);
+            res.json({ enhanced: true, groq: result, model: 'llama-3.3-70b-versatile' });
+          } else {
+            res.json({ enhanced: false, message: 'Format de réponse invalide.' });
+          }
+        } catch (e) {
+          console.error('[Groq] Parse error:', e.message);
+          res.status(200).json({ enhanced: false, message: 'Erreur parsing.' });
+        }
+      });
+    });
+
+    apiReq.on('error', (e) => {
+      console.error('[Groq] Erreur réseau:', e.message);
+      res.status(200).json({ enhanced: false, message: e.message });
+    });
+    apiReq.setTimeout(15000, () => {
+      apiReq.destroy();
+      res.status(200).json({ enhanced: false, message: 'Timeout Groq (15s)' });
+    });
+    apiReq.write(body);
+    apiReq.end();
+
+  } catch (e) {
+    res.status(200).json({ enhanced: false, message: e.message });
+  }
+});
+
 // ── Gestion des erreurs globales ─────────────────────────────────
 process.on('uncaughtException', (err) => {
   console.error('🚨 ERREUR CRITIQUE NON GÉRÉE:', err);
