@@ -6815,7 +6815,7 @@ async function runGroqAnalysis(container, game, data, localSummary) {
   try {
     const groqRes = await apiFetch('/api/groq-analyze', {
       method: 'POST',
-      body: JSON.stringify({ game, data: data.slice(0, 30), localAnalysis: localSummary || '' })
+      body: JSON.stringify({ game, data: data.slice(0, 150), localAnalysis: localSummary || '' })
     });
     if (!groqRes.ok) return;
     const groqData = await groqRes.json();
@@ -6826,11 +6826,21 @@ async function runGroqAnalysis(container, game, data, localSummary) {
     const g = groqData.groq;
     const riskColor = g.risk && g.risk.toLowerCase().includes('faible') ? 'var(--accent)' :
                        g.risk && g.risk.toLowerCase().includes('élev') ? 'var(--red)' : 'var(--gold)';
+    // Type de jeu détecté côté serveur (transparence : simulation virtuelle vs casino)
+    const typeLabel = groqData.gameType === 'virtual-penalty'  ? 'SIMULATION tirs au but · vainqueur obligatoire (PAS de nul) · stats par équipe' :
+                      groqData.gameType === 'virtual-football' ? 'SIMULATION match virtuel · nuls possibles · stats par équipe' :
+                      groqData.gameType === 'baccara'          ? 'Jeu de casino · Baccara' :
+                      groqData.gameType === 'blackjack'        ? 'Blackjack casino' :
+                      groqData.gameType === 'crash'            ? 'Crash game · multiplicateurs' : 'Analyse statistique';
+    const lowDataNote = groqData.lowData
+      ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.25);border-radius:6px;font-size:11px;color:var(--gold);line-height:1.5">⚠️ Échantillon limité — l'analyse Groq est prudente. Plus de données = prédictions plus fiables.</div>` : '';
+    const cachedNote = groqData.cached ? '<span style="color:var(--muted);font-weight:400"> · (cache)</span>' : '';
     const groqHtml = `
       <div class="prono-card" style="border:2px solid var(--accent-2);background:linear-gradient(135deg,rgba(0,229,255,0.06),rgba(123,94,167,0.06));margin-top:12px;position:relative;overflow:hidden">
         <div style="position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--accent-2),var(--accent2));color:#000;font-size:9px;font-weight:800;padding:3px 10px;border-radius:0 0 0 8px;letter-spacing:1px">⚡ GROQ AI · LLAMA 3.3 70B</div>
         <div style="margin-top:16px">
-          <div class="prono-game-tag">🧠 Analyse neuro-cognitive approfondie</div>
+          <div class="prono-game-tag">🧠 Analyse neuro-cognitive approfondie${cachedNote}</div>
+          <div style="font-size:10px;color:var(--accent-2);font-weight:700;letter-spacing:0.5px;margin-bottom:6px">🧩 ${typeLabel}</div>
           <div style="font-size:17px;font-weight:800;color:var(--text-bright);margin:8px 0;line-height:1.4">${g.prediction || '—'}</div>
           <div style="display:flex;align-items:center;gap:12px;margin:12px 0">
             <div class="confidence ${g.confidence >= 80 ? 'high' : g.confidence >= 68 ? 'mid' : 'low'}" style="font-size:24px">${g.confidence || '—'}%</div>
@@ -6843,6 +6853,7 @@ async function runGroqAnalysis(container, game, data, localSummary) {
           <div class="prono-reasoning" style="margin-top:12px;font-size:13px;line-height:1.7">🔬 ${g.analysis || ''}</div>
           ${g.strategy ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(0,229,160,0.06);border-left:3px solid var(--accent);border-radius:6px;font-size:12px;line-height:1.6"><strong style="color:var(--accent)">🎯 Stratégie :</strong> ${g.strategy}</div>` : ''}
           ${g.signal ? `<div style="margin-top:8px;padding:10px 12px;background:rgba(0,229,255,0.06);border-left:3px solid var(--accent-2);border-radius:6px;font-size:12px;line-height:1.6"><strong style="color:var(--accent-2)">💎 Signal détecté :</strong> ${g.signal}</div>` : ''}
+          ${lowDataNote}
         </div>
       </div>`;
     const hadarCard = container.querySelector('.hadar-card');
@@ -8991,5 +9002,5 @@ window.addEventListener('appinstalled', () => {
 });
 </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0d709d38c4476c6',t:'MTc4MTc1MTU3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0dc897b9bc1ad4f',t:'MTc4MTgwOTIyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a28211ebe8cb6644',t:'MTc4NjIyOTMyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

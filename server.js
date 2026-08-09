@@ -1169,108 +1169,244 @@ app.get('/api/admin/accounts/export.csv', adminMiddleware, (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════
-//  GROQ AI — Analyse prédictive avancée (Llama 3.3 70B)
-//  Complément du moteur local HADAR AI. Nécessite GROQ_API_KEY.
-//  Plan gratuit : https://console.groq.com
 // ══════════════════════════════════════════════════════════════════
+//  GROQ AI — Moteur d'analyse prédictive expert (Llama 3.3 70B)
+//  Prompts SPÉCIFIQUES par type de jeu. Ces jeux sont des SIMULATIONS
+//  virtuelles (1xBet / Spribe) régies par des algorithmes RNG : l'IA doit
+//  s'appuyer UNIQUEMENT sur l'historique statistique, JAMAIS sur une
+//  "connaissance footballistique" réelle (les noms d'équipes sont neutres).
+//  Complément du moteur local HADAR AI. Nécessite GROQ_API_KEY.
+// ══════════════════════════════════════════════════════════════════
+
+const GROQ_MODEL       = 'llama-3.3-70b-versatile';
+const GROQ_TIMEOUT_MS  = 20000;
+const GROQ_CACHE_TTL   = 45000;   // cache 45 s par jeu (évite le spam / optimise le quota gratuit)
+const GROQ_MIN_DATA    = 5;       // en dessous, l'analyse Groq est jugée peu fiable
+const _groqCache = new Map();     // game -> { ts, payload }
+
+function groqPct(n, total) { return total ? Math.round((n / total) * 100) : 0; }
+
+// Nature réelle de chaque jeu (évite l'hallucination "football réel")
+// Nature réelle de chaque jeu.
+//  - noDraw = true  : un vainqueur est TOUJOURS désigné (tirs au but) → le nul est IMPOSSIBLE.
+//  - noDraw = false : les matchs nuls sont possibles (FIFA 4×4).
+const GAME_NATURE = {
+  penalty18: { type: 'virtual-penalty',  label: 'FIFA Penalty 18 (simulation tirs au but 1xBet)', noDraw: true,  target: 'le vainqueur du prochain tir au but (DOMICILE ou EXTÉRIEUR — un nul est IMPOSSIBLE) et le score le plus probable' },
+  penalty22: { type: 'virtual-penalty',  label: 'FIFA Penalty 22 (simulation tirs au but 1xBet)', noDraw: true,  target: 'le vainqueur du prochain tir au but (DOMICILE ou EXTÉRIEUR — un nul est IMPOSSIBLE) et le score le plus probable' },
+  fifa4x4:   { type: 'virtual-football', label: 'FIFA 4×4 FC24 (simulation match 1xBet)',        noDraw: false, target: 'le résultat du prochain match (DOMICILE / NUL / EXTÉRIEUR) et le score le plus probable' },
+  baccara:   { type: 'baccara',          label: 'Baccara casino',         target: 'le côté gagnant du prochain coup (Joueur / Banquier / Égalité)' },
+  jeu21:     { type: 'blackjack',        label: 'Blackjack (Jeu 21)',     target: 'le résultat de la prochaine main (WIN / LOSE / PUSH)' },
+  aviator:   { type: 'crash',            label: 'Aviator (crash game Spribe)', target: 'la zone de cash-out optimale et la probabilité de crash précoce (<2x)' },
+};
+
+const NATURE_DESC = {
+  'virtual-penalty':  'SIMULATION de TIRS AU BUT virtuels (FIFA) générée par un algorithme RNG chez le bookmaker 1xBet. POINT CLÉ : un tir au but désigne TOUJOURS un vainqueur — un MATCH NUL EST IMPOSSIBLE, il y a forcément DOMICILE ou EXTÉRIEUR. Les noms d\'équipes sont des étiquettes du simulateur : tu PEUX exploiter leurs PERFORMANCES HISTORIQUES telles qu\'elles figurent dans les données fournies (taux de victoire par équipe, scores fréquents, confrontations directes), mais tu ne dois JAMAIS utiliser de connaissance footballistique du monde réel (forme réelle, blessures, tactique, derby, motivation).',
+  'virtual-football': 'SIMULATION de match de football virtuel (FIFA 4×4) générée par un algorithme RNG chez le bookmaker 1xBet. Les MATCHS NULS sont possibles ici. Les noms d\'équipes sont des étiquettes du simulateur : tu PEUX exploiter leurs PERFORMANCES HISTORIQUES telles qu\'elles figurent dans les données fournies (taux de victoire par équipe, scores fréquents, confrontations directes), mais tu ne dois JAMAIS utiliser de connaissance footballistique du monde réel (forme réelle, blessures, tactique, derby, motivation).',
+  'baccara':          'Jeu de BACCARA de casino. À chaque coup, le Joueur et le Banquier reçoivent des cartes ; le côté le plus proche de 9 gagne (égalité possible). Avantage structurel théorique : Joueur ~44,6% / Banquier ~45,9% / Égalité ~9,5%.',
+  'blackjack':        'Jeu de BLACKJACK (21) de casino. Résultat WIN (joueur gagne) / LOSE (croupier gagne) / PUSH (égalité). Analyse la distribution, la fréquence de bust (>21) et les séries.',
+  'crash':            'Jeu à MULTIPLICATEUR (crash game) type Aviator (Spribe). Un multiplicateur monte depuis 1.00x puis "crashe". Référence statistique : ~50% des tours < 2x, ~9% > 10x. Analyse les séries de crashes précoces, l\'écart depuis le dernier gros multiplicateur et la zone de cash-out optimale.',
+};
+
+// ── Statistiques riches pré-calculées par type de jeu ──────────────
+function computeGroqStats(game, data) {
+  const total = data.length;
+  if (!total) return 'Aucune donnée disponible.';
+  const sampleNote = total < 20 ? `\n⚠️ Échantillon limité (${total}) : prudence sur la confiance.` : '';
+
+  if (game === 'aviator') {
+    const mults = data.map(r => Number(r.multiplier)).filter(Number.isFinite);
+    const t = mults.length || 1;
+    const avg = mults.reduce((a,b)=>a+b,0) / t;
+    const sorted = [...mults].sort((a,b)=>a-b);
+    const median = sorted[Math.floor(t/2)];
+    const low = mults.filter(m => m < 2).length;
+    const mid = mults.filter(m => m >= 2 && m < 10).length;
+    const high = mults.filter(m => m >= 10).length;
+    let early = 0; for (const m of mults) { if (m < 2) early++; else break; }
+    let sinceHigh = mults.findIndex(m => m >= 10); sinceHigh = sinceHigh < 0 ? t : sinceHigh;
+    const recentAvg = mults.slice(0,10).reduce((a,b)=>a+b,0) / (Math.min(10,t)||1);
+    return [
+      `Total: ${t} tours | Moyenne: ${avg.toFixed(2)}x | Médiane: ${median.toFixed(2)}x`,
+      `Répartition: <2x = ${groqPct(low,t)}% | 2-10x = ${groqPct(mid,t)}% | >10x = ${groqPct(high,t)}% (théorie ~50/41/9%)`,
+      `Série de crashes précoces (<2x): ${early} consécutif(s)`,
+      `Tours écoulés depuis le dernier >10x: ${sinceHigh}`,
+      `Moyenne 10 derniers tours: ${recentAvg.toFixed(2)}x`,
+    ].join('\n') + sampleNote;
+  }
+
+  if (game === 'baccara') {
+    let p = 0, b = 0, tie = 0, nat = 0;
+    data.forEach(r => {
+      const ps = r.playerScore ?? r.player ?? 0, bs = r.bankerScore ?? r.banker ?? 0;
+      if (ps > bs) p++; else if (bs > ps) b++; else tie++;
+      if (r.natural || ps >= 8 || bs >= 8) nat++;
+    });
+    const seq = data.slice(0,15).map(r => {
+      const ps = r.playerScore ?? r.player ?? 0, bs = r.bankerScore ?? r.banker ?? 0;
+      return ps > bs ? 'J' : bs > ps ? 'B' : 'E';
+    });
+    let streakSide = seq[0], streakLen = 0;
+    for (const s of seq) { if (s === streakSide) streakLen++; else break; }
+    const labelSide = streakSide === 'J' ? 'Joueur' : streakSide === 'B' ? 'Banquier' : 'Égalité';
+    return [
+      `Total: ${total} coups | Joueur: ${p} (${groqPct(p,total)}%) | Banquier: ${b} (${groqPct(b,total)}%) | Égalité: ${tie} (${groqPct(tie,total)}%)`,
+      `Naturelles (8 ou 9): ${nat} (${groqPct(nat,total)}%) | Référence: J~44,6% / B~45,9% / E~9,5%`,
+      `Série en cours: ${streakLen}× ${labelSide} | Séquence: ${seq.join('-')}`,
+    ].join('\n') + sampleNote;
+  }
+
+  if (game === 'jeu21') {
+    let w = 0, l = 0, pu = 0, bust = 0;
+    data.forEach(r => {
+      const res = String(r.result||'').toUpperCase();
+      if (res==='WIN') w++; else if (res==='LOSE') l++; else pu++;
+      if ((r.player??0) > 21 || (r.dealer??0) > 21) bust++;
+    });
+    let streakSide = String(data[0]?.result||'').toUpperCase(), streakLen = 0;
+    for (const r of data) { if (String(r.result||'').toUpperCase()===streakSide) streakLen++; else break; }
+    return [
+      `Total: ${total} mains | WIN: ${w} (${groqPct(w,total)}%) | LOSE: ${l} (${groqPct(l,total)}%) | PUSH: ${pu} (${groqPct(pu,total)}%)`,
+      `Bust (>21): ${bust} (${groqPct(bust,total)}%) | Série en cours: ${streakLen}× ${streakSide||'—'}`,
+    ].join('\n') + sampleNote;
+  }
+
+  // ── Jeux virtuels (penalty18, penalty22, fifa4x4) ──
+  const noDraw = !!GAME_NATURE[game]?.noDraw;
+  const parsed = data.map(r => {
+    const parts = String(r.score || '0:0').split(':');
+    return { h: Number(parts[0])||0, a: Number(parts[1])||0, home: String(r.home||'Dom').trim(), away: String(r.away||'Ext').trim() };
+  });
+  const dom = parsed.filter(x => x.h > x.a).length;
+  const nul = noDraw ? 0 : parsed.filter(x => x.h === x.a).length;
+  const ext = parsed.filter(x => x.a > x.h).length;
+  const gH = parsed.reduce((s,x)=>s+x.h,0), gA = parsed.reduce((s,x)=>s+x.a,0);
+  const totGoalsArr = parsed.map(x => x.h + x.a);
+  const avgH = (gH/total).toFixed(2), avgA = (gA/total).toFixed(2);
+  const avgTot = (totGoalsArr.reduce((a,b)=>a+b,0)/total).toFixed(2);
+  const freq = {}; parsed.forEach(x => { const k = `${x.h}:${x.a}`; freq[k] = (freq[k]||0)+1; });
+  const topScores = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const seq = parsed.slice(0,15).map(x => x.h>x.a?'DOM':x.h===x.a?'NUL':'EXT');
+  let streakSide = seq[0], streakLen = 0;
+  for (const s of seq) { if (s === streakSide) streakLen++; else break; }
+  const threshold = game === 'fifa4x4' ? 5.5 : 3.5;
+  const over = totGoalsArr.filter(g => g > threshold).length;
+
+  // Performances historiques par équipe (exploitable par Groq, sans logique football réelle)
+  const teams = {};
+  parsed.forEach(x => {
+    for (const [name, side] of [[x.home,'h'], [x.away,'a']]) {
+      if (!teams[name]) teams[name] = { p:0, w:0, d:0, l:0, gf:0, ga:0 };
+      teams[name].p++;
+      const my = side==='h' ? x.h : x.a, opp = side==='h' ? x.a : x.h;
+      teams[name].gf += my; teams[name].ga += opp;
+      if (my > opp) teams[name].w++; else if (my < opp) teams[name].l++; else teams[name].d++;
+    }
+  });
+  const teamRows = Object.entries(teams)
+    .map(([name, t]) => ({ name, wr: t.p ? Math.round(t.w/t.p*100) : 0, p: t.p, gf: t.p?(t.gf/t.p).toFixed(1):'0', ga: t.p?(t.ga/t.p).toFixed(1):'0' }))
+    .filter(t => t.p >= 2)
+    .sort((a,b) => b.wr - a.wr || b.p - a.p)
+    .slice(0, 8);
+
+  const distLine = noDraw
+    ? `Distribution: Domicile ${dom} (${groqPct(dom,total)}%) | Extérieur ${ext} (${groqPct(ext,total)}%) — NUL IMPOSSIBLE`
+    : `Distribution: Domicile ${dom} (${groqPct(dom,total)}%) | Nuls ${nul} (${groqPct(nul,total)}%) | Extérieur ${ext} (${groqPct(ext,total)}%)`;
+  const teamLine = teamRows.length
+    ? `\nPerformances par équipe (historique du jeu): ${teamRows.map(t => `${t.name} ${t.wr}%V/${t.p}m (${t.gf}-${t.ga} buts)`).join(' · ')}`
+    : '';
+
+  return [
+    `Total: ${total} matchs | ${distLine}`,
+    `Buts moyens: ${avgH}-${avgA} (total ${avgTot}/match) | Over ${threshold}: ${groqPct(over,total)}%`,
+    `Scores fréquents: ${topScores.map(([s,c])=>`${s}×${c}`).join(', ')}`,
+    `Série en cours: ${streakLen}× ${streakSide} | Séquence: ${seq.join('-')}`,
+  ].join('\n') + teamLine + sampleNote;
+}
+
+// ── Résumé des derniers résultats AVEC noms d'équipes (historique exploitable) ──
+function buildRecentSummary(game, data) {
+  const recent = data.slice(0, Math.min(25, data.length));
+  if (game === 'aviator') return recent.map(r => `${r.multiplier}x`).join(', ');
+  if (game === 'baccara') return recent.map(r => {
+    const ps = r.playerScore ?? r.player ?? 0, bs = r.bankerScore ?? r.banker ?? 0;
+    return `${ps}-${bs}${r.natural||ps>=8||bs>=8?' (R)':''}→${ps>bs?'J':bs>ps?'B':'E'}`;
+  }).join(' | ');
+  if (game === 'jeu21') return recent.map(r => `${r.player}-${r.dealer}→${r.result}`).join(' | ');
+  // Football / penalty : noms d'équipes conservés (Groq exploite l'historique par équipe)
+  return recent.map(r => {
+    const parts = String(r.score || '0:0').split(':');
+    return `${r.home || 'Dom'} ${parts[0]}-${parts[1]} ${r.away || 'Ext'}`;
+  }).join(' | ');
+}
+
+// ── Construction des messages (prompt spécifique au type de jeu) ───
+function buildGroqMessages(game, data, localAnalysis) {
+  const nature = GAME_NATURE[game] || { type: 'virtual-football', label: game, target: 'le prochain résultat' };
+  const desc   = NATURE_DESC[nature.type] || NATURE_DESC['virtual-football'];
+  const stats  = computeGroqStats(game, data);
+  const recent = buildRecentSummary(game, data);
+  const lowData = data.length < GROQ_MIN_DATA;
+
+  const system = `Tu es HADAR AI, un moteur d'analyse STATISTIQUE prédictive pour des jeux de paris VIRTUELS (1xBet / Spribe).
+CONTEXTE : ces jeux sont des SIMULATIONS algorithmiques (RNG). Pour les jeux de football / tirs au but virtuels, les noms d'équipes sont des ÉTIQUETTES du simulateur : tu PEUX exploiter leurs PERFORMANCES HISTORIQUES telles qu'elles figurent dans les données fournies (taux de victoire par équipe, scores fréquents, confrontations directes, ampleur de l'historique), MAIS tu ne dois JAMAIS utiliser de connaissance footballistique du monde réel (forme réelle, blessures, tactique, derby, motivation, avantage terrain réel).
+Tu réponds en français, UNIQUEMENT au format JSON, de façon concrète, chiffrée et professionnelle.`;
+
+  const user = `JEU ANALYSÉ : ${nature.label}
+TYPE : ${nature.type}
+
+NATURE DU JEU :
+${desc}
+
+STATISTIQUES HISTORIQUES (pré-calculées sur ${data.length} résultats) :
+${stats}
+
+${data.length >= GROQ_MIN_DATA ? `DERNIERS RÉSULTATS (du + récent au + ancien) :\n${recent}` : '⚠️ Données insuffisantes : fournis une analyse prudente.'}
+
+${localAnalysis ? `ANALYSE LOCALE HADAR (moteur statistique maison) : ${localAnalysis}` : ''}
+
+MISSION :
+1. Identifie les patterns marquants : performances historiques par équipe, biais domicile/extérieur, séries actives, scores récurrents, ampleur de l'historique disponible.
+2. Propose UNE prédiction concrète de ${nature.target}, strictement ancrée dans ces statistiques.
+3. Donne un niveau de confiance entre 55% et 92% : ÉLÈVE-la si un bord statistique net existe (équipe historiquement dominante, série longue, biais marqué) ; BAISSE-la vers 55-62% si les données sont proches du hasard pur ou l'échantillon faible.
+4. Recommande une stratégie de mise / cash-out adaptée à CE type de jeu.
+5. Signale un pattern caché que les statistiques simples pourraient manquer (regroupement, alternance, correction de moyenne, surperformance d'une équipe).
+
+Réponds UNIQUEMENT avec ce JSON valide :
+{"prediction":"prédiction concrète en 1 phrase","confidence":78,"analysis":"analyse 3-4 phrases ancrée dans les chiffres ci-dessus","strategy":"recommandation 1-2 phrases","signal":"pattern remarquable détecté","risk":"Faible/Moyen/Élevé + raison"}`;
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user',   content: user },
+  ];
+}
 
 app.post('/api/groq-analyze', async (req, res) => {
   const { game, data, localAnalysis } = req.body || {};
-
   if (!game || !data || !data.length) {
     return res.status(400).json({ error: 'Données manquantes.' });
   }
 
   const groqKey = process.env.GROQ_API_KEY || '';
   if (!groqKey) {
-    return res.status(200).json({
-      enhanced: false,
-      message: 'GROQ_API_KEY non configurée. Analyse locale uniquement.'
-    });
+    return res.status(200).json({ enhanced: false, message: 'GROQ_API_KEY non configurée. Analyse locale uniquement.' });
   }
 
-  // Préparer un résumé compact des données (max 30 derniers résultats)
-  const recent = data.slice(0, Math.min(30, data.length));
-  let dataSummary = '';
-
-  if (game === 'baccara') {
-    dataSummary = recent.map(r => `#${r.n}: Player ${r.playerScore ?? r.player} vs Banker ${r.bankerScore ?? r.banker}${r.natural ? ' (R)' : ''}`).join('\n');
-  } else if (game === 'jeu21') {
-    dataSummary = recent.map(r => `#${r.n}: ${r.player} vs ${r.dealer} → ${r.result}`).join('\n');
-  } else if (game === 'aviator' || game === 'crash') {
-    dataSummary = recent.map(r => `#${r.n}: ${r.multiplier}x`).join('\n');
-  } else {
-    // Penalty / FIFA 4×4
-    dataSummary = recent.map(r => `#${r.n}: ${r.home} ${r.score} ${r.away}`).join('\n');
+  // Cache court par jeu : évite les appels redondants si l'utilisateur relance vite.
+  const cached = _groqCache.get(game);
+  const now = Date.now();
+  if (cached && (now - cached.ts) < GROQ_CACHE_TTL) {
+    console.log(`[Groq] ⏩ Cache (${Math.round((GROQ_CACHE_TTL-(now-cached.ts))/1000)}s) pour ${game}`);
+    return res.json({ ...cached.payload, cached: true });
   }
-
-  // Statistiques de base pour guider l'IA
-  const stats = (() => {
-    if (game === 'aviator' || game === 'crash') {
-      const mults = data.map(r => Number(r.multiplier)).filter(Number.isFinite);
-      const avg = mults.reduce((a,b)=>a+b,0) / mults.length;
-      const low = mults.filter(m => m < 2).length;
-      const high = mults.filter(m => m >= 10).length;
-      return `Moyenne: ${avg.toFixed(2)}x | <2x: ${Math.round(low/mults.length*100)}% | >10x: ${Math.round(high/mults.length*100)}%`;
-    } else if (game === 'baccara') {
-      let p = 0, b = 0, t = 0;
-      data.forEach(r => { const ps = r.playerScore ?? r.player; const bs = r.bankerScore ?? r.banker; if (ps > bs) p++; else if (bs > ps) b++; else t++; });
-      return `Player: ${p} | Banker: ${b} | Tie: ${t} / ${data.length}`;
-    } else if (game === 'jeu21') {
-      let w = 0, l = 0, pu = 0;
-      data.forEach(r => { const res = String(r.result).toUpperCase(); if (res==='WIN') w++; else if (res==='LOSE') l++; else pu++; });
-      return `WIN: ${w} | LOSE: ${l} | PUSH: ${pu} / ${data.length}`;
-    } else {
-      let hw = 0, aw = 0, dr = 0;
-      data.forEach(r => { const [h,a] = (r.score||'0:0').split(':').map(Number); if(h>a) hw++; else if(a>h) aw++; else dr++; });
-      return `Domicile: ${hw} | Extérieur: ${aw} | Nuls: ${dr} / ${data.length}`;
-    }
-  })();
-
-  const gameLabel = game === 'penalty18' ? 'FIFA Penalty 18' :
-                    game === 'penalty22' ? 'FIFA Penalty 22' :
-                    game === 'fifa4x4' ? 'FIFA 4×4 FC24 England Championship' :
-                    game === 'baccara' ? 'Baccara casino' :
-                    game === 'jeu21' ? 'Blackjack (Jeu 21)' :
-                    game === 'aviator' ? 'Aviator (crash game)' : game;
-
-  const prompt = `Tu es HADAR AI, un moteur d'analyse prédictive expert pour les jeux de hasard virtuels. Analyse les données suivantes du jeu "${gameLabel}" et fournis une prédiction détaillée.
-
-STATISTIQUES GLOBALES: ${stats}
-
-30 DERNIERS RÉSULTATS (du plus récent au plus ancien):
-${dataSummary}
-
-${localAnalysis ? `ANALYSE LOCALE HADAR (déjà calculée): ${localAnalysis}` : ''}
-
-INSTRUCTIONS:
-1. Analyse les tendances, patterns, séries, et écarts statistiques
-2. Propose UNE prédiction concrète pour le prochain résultat (sois précis et spécifique au jeu)
-3. Donne un niveau de confiance entre 60% et 95% (justifie)
-4. Recommande une stratégie de mise/cash-out adaptée
-5. Identifie un signal fort ou un pattern remarquable que les statistiques simples pourraient manquer
-
-Format de réponse (OBLIGATOIRE, en JSON valide):
-{
-  "prediction": "ta prédiction concrète en 1 phrase",
-  "confidence": 78,
-  "analysis": "analyse approfondie en 3-4 phrases (tendances, patterns, signaux cachés)",
-  "strategy": "recommandation stratégique en 1-2 phrases",
-  "signal": "un insight remarquable ou un pattern caché que tu as détecté",
-  "risk": "niveau de risque: Faible/Moyen/Élevé + raison en 1 phrase"
-}
-
-Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
 
   try {
+    const messages = buildGroqMessages(game, data, localAnalysis);
     const body = JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: 'Tu es HADAR AI, un analyste prédictif expert. Tu réponds toujours en français et UNIQUEMENT au format JSON demandé. Tes analyses sont profondes, nuancées et professionnelles.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 800
+      model: GROQ_MODEL,
+      messages,
+      temperature: 0.6,
+      max_tokens: 900,
+      response_format: { type: 'json_object' }
     });
 
     const apiReq = https.request({
@@ -1293,12 +1429,19 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
             return res.status(200).json({ enhanced: false, message: parsed.error.message });
           }
           const text = parsed.choices?.[0]?.message?.content || '';
-          // Extraire le JSON de la réponse
           const jsonMatch = text.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const result = JSON.parse(jsonMatch[0]);
-            console.log('[Groq] ✅ Analyse générée pour', game);
-            res.json({ enhanced: true, groq: result, model: 'llama-3.3-70b-versatile' });
+            const payload = {
+              enhanced: true,
+              groq: result,
+              model: GROQ_MODEL,
+              gameType: GAME_NATURE[game]?.type || 'virtual-football',
+              lowData: data.length < GROQ_MIN_DATA
+            };
+            _groqCache.set(game, { ts: Date.now(), payload });
+            console.log(`[Groq] ✅ Analyse générée pour ${game} (type: ${payload.gameType}${payload.lowData ? ' · low-data' : ''})`);
+            res.json(payload);
           } else {
             res.json({ enhanced: false, message: 'Format de réponse invalide.' });
           }
@@ -1313,9 +1456,9 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
       console.error('[Groq] Erreur réseau:', e.message);
       res.status(200).json({ enhanced: false, message: e.message });
     });
-    apiReq.setTimeout(15000, () => {
+    apiReq.setTimeout(GROQ_TIMEOUT_MS, () => {
       apiReq.destroy();
-      res.status(200).json({ enhanced: false, message: 'Timeout Groq (15s)' });
+      res.status(200).json({ enhanced: false, message: 'Timeout Groq (' + (GROQ_TIMEOUT_MS/1000) + 's)' });
     });
     apiReq.write(body);
     apiReq.end();
