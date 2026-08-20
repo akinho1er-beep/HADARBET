@@ -186,10 +186,14 @@ function resultKey(game, item) {
 
 function mergeResults(game, incoming, existing = []) {
   const map = new Map();
-  [...incoming, ...existing].forEach(item => {
+  // ✅ On insère d'abord l'EXISTANT, puis on laisse l'ARRIVANT écraser.
+  // Les canaux Telegram éditent leurs messages : un match diffusé en direct
+  // (score partiel, ex. 3:2) est corrigé avec son score final (4:5).
+  // Auparavant la première version lue était conservée, si bien que la base
+  // gardait des scores de mi-match ne correspondant plus au bookmaker.
+  [...existing, ...incoming].forEach(item => {
     if (!item) return;
-    const key = resultKey(game, item);
-    if (!map.has(key)) map.set(key, item);
+    map.set(resultKey(game, item), item);
   });
   // ✅ Tri par timestamp d'abord (fiable sur tous les jeux), n en départage.
   return [...map.values()]
@@ -579,7 +583,14 @@ function parseFifa4x4(text, index, msgId, msgTs) {
           : Math.floor(Date.now() / 1000) % 100000 + index * 10; // repli
   const ts = Number.isFinite(Number(msgTs)) ? Number(msgTs) : Date.now();
 
-  return { n, home, away, score, ts, msgId: n };
+  // ✅ Un match FIFA 4×4 est TERMINÉ quand les deux mi-temps sont publiées :
+  // « 12:3 (8:2 4:1) » = 2 groupes entre parenthèses. Un seul groupe
+  // (« 5:4 (5:4) ») = match encore en cours, score partiel.
+  // Le canal édite ensuite le message avec le score final ; mergeResults
+  // remplace alors cette entrée par la version définitive.
+  const mts = (String(text).match(/\((\s*\d+\s*:\s*\d+[\s\d:]*)\)/) || [])[1] || '';
+  const enCours = (mts.match(/\d+\s*:\s*\d+/g) || []).length < 2;
+  return { n, home, away, score, ts, msgId: n, live: enCours || undefined };
 }
 
 // ── Mise à jour d'un canal ───────────────────────────────────

@@ -17,7 +17,8 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 const load = g => {
   const f = path.join(DATA_DIR, `${g}.json`);
   if (!fs.existsSync(f)) return [];
-  return JSON.parse(fs.readFileSync(f, 'utf8'))
+  // ✅ Matchs en cours écartés : score partiel, non représentatif.
+  return JSON.parse(fs.readFileSync(f, 'utf8')).filter(r => !r.live)
     .slice().sort((a, b) => (a.ts - b.ts) || ((a.msgId || a.n || 0) - (b.msgId || b.n || 0)));
 };
 

@@ -28,7 +28,8 @@ const CAL_BINS = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0001];
 function load(game) {
   const f = path.join(DATA_DIR, `${game}.json`);
   if (!fs.existsSync(f)) return [];
-  const rows = JSON.parse(fs.readFileSync(f, 'utf8'));
+  // ✅ On écarte les matchs encore EN COURS : leur score est partiel.
+  const rows = JSON.parse(fs.readFileSync(f, 'utf8')).filter(r => !r.live);
   return rows.slice().sort((a, b) =>
     (a.ts - b.ts) || ((a.msgId || a.n || 0) - (b.msgId || b.n || 0)));
 }

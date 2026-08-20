@@ -209,6 +209,25 @@ check('7t', 'CORS piloté par ALLOWED_ORIGINS', SECU.includes('ALLOWED_ORIGINS')
 check('7t', 'CORS : requêtes de même origine acceptées (anti-auto-blocage)',
   SECU.includes('memeOrigine') && SECU.includes('x-forwarded-host'),
   'les navigateurs envoient Origin même en même origine sur les POST');
+// --- 7quinquies : numéros de jeux conformes aux canaux ---
+const HARV = fs.existsSync(path.join(ROOT, 'tools/harvest.js'))
+  ? fs.readFileSync(path.join(ROOT, 'tools/harvest.js'), 'utf8') : '';
+check('7q', "harvest.js ne renumérote plus n (garde le #N du canal)",
+  !HARV.includes('r.n = total - i'),
+  'le #N affiché doit être celui que voit l\'utilisateur chez le bookmaker');
+check('7q', 'Champ cycleN supprimé', !HARV.includes('r.cycleN = r.n'));
+check('7q', "harvest.js : la version rééditée d'un message écrase l'ancienne",
+  HARV.includes('seen.set(key, r);') && !HARV.includes('if (!seen.has(key)) { seen.set(key, r); added++; }'),
+  'les canaux éditent le score partiel en score final');
+check('7q', "mergeResults : l'arrivant écrase l'existant",
+  SERVER.includes('[...existing, ...incoming]'),
+  'sinon un score de mi-match reste figé dans la base');
+check('7q', 'Matchs en cours marqués live',
+  SERVER.includes('live: enCours') && HARV.includes('live: enCours'));
+check('7q', 'Backtest et significativité excluent les matchs en cours',
+  fs.readFileSync(path.join(ROOT, 'tools/backtest.js'), 'utf8').includes('filter(r => !r.live)') &&
+  fs.readFileSync(path.join(ROOT, 'tools/significance.js'), 'utf8').includes('filter(r => !r.live)'));
+
 check('7t', 'En-têtes de sécurité envoyés',
   SECU.includes('X-Content-Type-Options') && SECU.includes('X-Frame-Options'));
 check('7t', 'Sessions écrites sur disque', SESS.includes('sessions.json'));

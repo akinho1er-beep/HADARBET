@@ -127,3 +127,53 @@ hadar/
 4. **CORS restrictif** (`cors()` est grand ouvert)
 5. **Automatiser le backtest** en cron hebdomadaire pour que l'onglet Performance reste à jour
 6. Sur Railway, définir `ADMIN_PASS` en variable d'environnement (sinon un mot de passe aléatoire est généré à chaque déploiement)
+
+---
+
+## 15. 🔴 Numéros de jeux (#N) faux — CORRIGÉ
+
+**Symptôme signalé.** Les numéros affichés dans l'application ne correspondaient
+ni au canal Telegram, ni à ce qui est visible chez le bookmaker.
+Exemple : l'app affichait `#N142` alors que le canal en était à `#N264`.
+
+**Cause.** `tools/harvest.js` **renumérotait** les résultats de 1 à N après
+collecte (`rows.forEach((r, i) => { r.n = total - i; })`). Le vrai `#N` publié
+était écrasé et déplacé dans un champ `cycleN` inutilisé par l'interface.
+
+**Correctif.**
+- `n` conserve désormais le **vrai `#N` du canal** (celui du bookmaker).
+- `cycleN` supprimé (redondant).
+- L'ordre chronologique reste porté par `ts` / `msgId`, **jamais par `n`**
+  (le `#N` se réinitialise périodiquement : `#N288 → #N1`).
+
+**Vérification.** Base `#N265 / #N264 / #N263` = canal `#N265 / #N264 / #N263`. ✅
+
+---
+
+## 16. 🔴 Scores de mi-match figés dans l'historique — CORRIGÉ
+
+**Découvert en validant le correctif 15.** Un match affichait `3:2` en base
+alors que le canal indiquait `4:5`.
+
+**Cause.** Les canaux **éditent** leurs messages : le score est d'abord publié
+en direct (partiel), puis mis à jour avec le score final. La déduplication
+(`if (!seen.has(key))` dans `harvest.js`, `if (!map.has(key))` dans
+`mergeResults()` de `server.js`) conservait la **première** version lue.
+L'historique gardait donc des scores de mi-match, faussant les statistiques.
+
+**Correctif.** La version la plus récemment lue **remplace** l'ancienne, dans
+les deux chemins de collecte.
+
+**Correctif complémentaire — matchs en cours.** Les matchs FIFA 4×4 non
+terminés sont marqués `live: true` et **exclus** du backtest et des tests de
+significativité. Détection : un match terminé publie ses deux mi-temps
+(`12:3 (8:2 4:1)`) ; un seul groupe (`5:4 (5:4)`) = match en cours.
+Mesuré : 10 matchs en cours sur 1180 — ils sont automatiquement remplacés par
+leur version finale au passage de collecte suivant.
+
+**Effet sur la base.** 8 933 → **10 908 résultats** (profondeur 110 pages),
+tous avec le numéro réel du canal.
+
+**Conclusions statistiques inchangées** sur ce dataset élargi :
+indépendance confirmée (p = 0,20 à 0,70), « fréquence de base » gagnante
+partout sauf FIFA 4×4 (« Elo seul », +13,4 %).

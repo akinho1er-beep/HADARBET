@@ -115,7 +115,14 @@ function parseFifa4x4(text, ts, msgId) {
   }
   // ✅ CORRECTIF vs server.js : n = id du message Telegram (chronologique STABLE)
   // au lieu de Date.now() % 100000 + index*10 qui change à chaque poll.
-  return { n: msgId, home, away, score: `${sm[1]}:${sm[2]}`, ts, msgId };
+  // ✅ Un match FIFA 4×4 est TERMINÉ quand les deux mi-temps sont publiées :
+  // « 12:3 (8:2 4:1) » = 2 groupes entre parenthèses. Un seul groupe
+  // (« 5:4 (5:4) ») = match encore en cours, score partiel.
+  // Le canal édite ensuite le message avec le score final ; mergeResults
+  // remplace alors cette entrée par la version définitive.
+  const mts = (String(text).match(/\((\s*\d+\s*:\s*\d+[\s\d:]*)\)/) || [])[1] || '';
+  const enCours = (mts.match(/\d+\s*:\s*\d+/g) || []).length < 2;
+  return { n: msgId, home, away, score: `${sm[1]}:${sm[2]}`, ts, msgId, live: enCours || undefined };
 }
 
 const PARSERS = {
@@ -167,11 +174,15 @@ async function harvest(game, maxPages) {
       // l'historique à la taille d'un seul cycle. Le msgId, lui, est unique
       // et strictement croissant.
       const key = `m:${m.id}`;
-      // On conserve le #N d'origine dans `cycleN` et on garde msgId comme
-      // identifiant chronologique fiable.
-      r.cycleN = r.n;
+      // `n` garde le VRAI #N publié par le canal (celui que voit l'utilisateur
+      // chez le bookmaker). `msgId` sert d'identifiant unique et chronologique.
       r.msgId = m.id;
-      if (!seen.has(key)) { seen.set(key, r); added++; }
+      // ✅ Les canaux ÉDITENT leurs messages : un match publié en direct
+      // (score partiel) est mis à jour avec le score final. On remplace donc
+      // systématiquement la version connue par la plus récemment lue, sinon
+      // la base conserve un score de mi-match qui ne correspond plus à rien.
+      if (!seen.has(key)) added++;
+      seen.set(key, r);
     }
     const minId = Math.min(...msgs.map(m => m.id));
     process.stdout.write(`\r   ${game}: page ${page + 1}/${maxPages} · ${seen.size} résultats (+${added})   `);
@@ -184,10 +195,18 @@ async function harvest(game, maxPages) {
   // Tri du plus récent au plus ancien, par ID de message (chronologique fiable).
   // On NE trie PAS par #N : il se réinitialise et mélangerait les cycles.
   const rows = [...seen.values()].sort((a, b) => (b.msgId - a.msgId) || (b.ts - a.ts));
-  // Renumérotation continue : `n` devient un index chronologique global,
-  // indispensable pour l'ordre séquentiel des modèles (Elo, séries, alternance).
+  // ✅ CORRECTIF : on NE renumérote PLUS `n`.
+  // Auparavant `n` était remplacé par un index 1..N, si bien que l'application
+  // affichait « #N142 » alors que le canal (et le bookmaker) en étaient à
+  // « #N264 ». Le numéro affiché ne correspondait donc à rien de vérifiable.
+  // `n` conserve désormais le VRAI #N publié par le canal.
+  // L'ordre chronologique des modèles s'appuie sur `seq` (index interne) et
+  // sur `msgId`/`ts`, jamais sur `n` — voir tools/engine.js et backtest.js.
   const total = rows.length;
-  rows.forEach((r, i) => { r.n = total - i; });
+  rows.forEach((r, i) => {
+    delete r.cycleN;          // champ devenu inutile
+    r.seq = total - i;        // index chronologique interne (1 = plus ancien)
+  });
   return rows;
 }
 
