@@ -1,15 +1,23 @@
 {
   "name": "hadar-betanalytics",
-  "version": "3.0.0",
-  "description": "HADAR BetAnalytics Pro — backend sécurisé",
+  "version": "4.0.0",
+  "description": "HADAR BetAnalytics Pro — moteurs calibrés sur backtest réel",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "verifier": "node verifier.js --serveur",
+    "backtest": "node tools/backtest.js",
+    "stats": "node tools/significance.js",
+    "collecte": "node tools/harvest.js 60",
+    "test-groq": "node tools/test-groq.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "node-cron": "^3.0.3",
+    "node-cron": "^3.0.3"
+  },
+  "optionalDependencies": {
+    "puppeteer": "^22.15.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   },

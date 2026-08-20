@@ -18,9 +18,6 @@ if (!fs.existsSync(DATA_DIR)) {
 
 // Cache en mémoire pour éviter les lectures disque à chaque requête
 const cache = {};
-// Date de modification du fichier au moment de la mise en cache, pour détecter
-// qu'un outil externe (tools/harvest.js) a enrichi les données entre-temps.
-const cacheMtime = {};
 
 // ============================================================
 //  COMPTES UTILISATEURS (authentification sécurisée)
@@ -108,21 +105,8 @@ const storage = {
    * @returns {Array} Liste des résultats (ou [] si vide/erreur)
    */
   getResults(game) {
-    // ✅ CORRECTIF : le cache mémoire ne doit jamais masquer une modification
-    // externe du fichier. Auparavant, si `tools/harvest.js` enrichissait
-    // data/<jeu>.json pendant que le serveur tournait, celui-ci gardait son
-    // ancienne copie en mémoire et l'ÉCRASAIT au cycle de polling suivant
-    // (1789 résultats collectés → 295 réécrits). On compare donc la date de
-    // modification du fichier et on recharge s'il a changé.
-    let mtime = 0;
-    try {
-      const f = gameFile(game);
-      if (fs.existsSync(f)) mtime = fs.statSync(f).mtimeMs;
-    } catch (_) {}
-
-    if (!cache[game] || cacheMtime[game] !== mtime) {
+    if (!cache[game]) {
       cache[game] = readGame(game);
-      cacheMtime[game] = mtime;
     }
     return cache[game] || [];
   },
@@ -134,15 +118,10 @@ const storage = {
    * @param {Array} data - Tableau de résultats à sauvegarder
    */
   setResults(game, data) {
-    // ✅ Plafond porté à 5000 (configurable via MAX_RESULTS).
-    // À 500, le serveur TRONQUAIT l'historique collecté par harvest.js
-    // (1790 résultats → 500) dès son premier cycle de polling, ce qui
-    // ramenait le backtest à un échantillon trop petit pour conclure.
-    const MAX = parseInt(process.env.MAX_RESULTS || '5000', 10);
-    const limited = (data || []).slice(0, MAX);
+    // Conserver maximum 500 événements (triés par n décroissant)
+    const limited = (data || []).slice(0, 500);
     cache[game] = limited;
     writeGame(game, limited);
-    try { cacheMtime[game] = fs.statSync(gameFile(game)).mtimeMs; } catch (_) {}
     console.log(`[storage] ${game} → ${limited.length} résultats sauvegardés`);
   },
 

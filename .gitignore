@@ -1,20 +1,20 @@
+# Secrets — NE JAMAIS versionner
+.env
+.env.local
+.env.*.local
+
 # Dépendances
 node_modules/
 
-# Données locales (seront recréées sur Railway)
-data/
+# Données générées (comptes, résultats scrapés)
+data/accounts.json
+data/sessions.json
 
-# Environnement local
-.env
-.env.local
+# Sauvegardes locales
+backup/
 
-# Fichiers temporaires
-*.log
-/tmp/
-
-# OS
+# Système
 .DS_Store
 Thumbs.db
-
-# Cache
-.cache/
+*.log
+npm-debug.log*

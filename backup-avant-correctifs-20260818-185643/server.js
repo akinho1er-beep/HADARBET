@@ -23,13 +23,8 @@ let cron = null;
 try { cron = require('node-cron'); } catch (_) { cron = null; }
 
 const app = express();
-// ✅ CORS restrictif (piloté par ALLOWED_ORIGINS) au lieu de cors() grand ouvert.
-//    Par défaut : même origine uniquement — le front étant servi par ce serveur.
-const security = require('./security');
-app.set('trust proxy', 1); // Railway/proxy : X-Forwarded-For fiable pour le rate-limit
-app.use(security.securityHeaders);
-app.use(security.buildCors());
-app.use(express.json({ limit: '1mb' }));
+app.use(cors());
+app.use(express.json());
 
 // ── Servir les fichiers statiques (HTML, JS, icônes, etc.) ───
 app.use(express.static(path.join(__dirname)));
@@ -42,13 +37,11 @@ app.get('/', (req, res) => {
 
 // ── Configuration Telegram (via variable d'environnement) ────
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-// TELEGRAM_BOT_TOKEN est FACULTATIF : la collecte passe par les pages
-// publiques t.me/s/, qui ne demandent aucune authentification. Un simple
-// message d'information, et non un avertissement anxiogène.
-// (À noter : l'ancien fallback getUpdates ne peut de toute façon PAS lire
-//  l'historique d'un canal public — le token n'apporterait rien ici.)
 if (!BOT_TOKEN) {
-  console.log('ℹ️  Collecte Telegram via les pages publiques t.me/s/ (aucun token requis).');
+  console.warn('⚠️  TELEGRAM_BOT_TOKEN manquant. Définis-le avec:');
+  console.warn('   export TELEGRAM_BOT_TOKEN=8985006064:AAE6H_...  (Linux/Mac)');
+  console.warn('   ou set TELEGRAM_BOT_TOKEN=8985006064:AAE6H_... (Windows CMD)');
+  console.warn('   Le scraping HTML t.me/s/ sera utilisé sans fallback Bot API.');
 }
 
 const CHANNELS = {
@@ -70,9 +63,8 @@ const CHANNELS = {
 const VALID_GAMES = [...Object.keys(CHANNELS), 'aviator'];
 const UPCOMING_GAMES = ['fifa4x4', 'penalty18', 'penalty22'];
 const BOOKMAKER_SOURCES = ['1xbet']; // seul scraper disponible (onexbet_scraper)
-// ✅ Aligné sur storage.js : à 500, l'historique collecté était tronqué.
-const MAX_RESULTS_PER_GAME = parseInt(process.env.MAX_RESULTS || '5000', 10);
-const DEFAULT_RESULTS_LIMIT = 500; // limite par défaut d'une requête API
+const MAX_RESULTS_PER_GAME = 500;
+const DEFAULT_RESULTS_LIMIT = 500;
 const MAX_UPCOMING_FUTURE = 3;
 
 // ── Durées d'abonnement (référence serveur pour la création/édition de comptes) ──
@@ -117,13 +109,28 @@ function formatDateTime(ts) {
   return `${dateStr} à ${timeStr}`;
 }
 
-// ── Sessions PERSISTÉES sur disque (data/sessions.json) ──
-// Auparavant en mémoire : chaque redéploiement Railway déconnectait tout le monde.
-const sessionStore = require('./sessions');
-const SESSION_TTL = sessionStore.TTL;
-const createSession    = (user)  => sessionStore.createSession(user);
-const getSession       = (token) => sessionStore.getSession(token);
-const destroySession   = (token) => sessionStore.destroySession(token);
+// ── Sessions (tokens aléatoires, stockés en mémoire, avec expiration) ──
+const SESSION_TTL = 12 * 3600 * 1000; // 12 heures
+const sessions = new Map(); // token -> { username, role, expiresAt }
+
+function createSession(user) {
+  const token = crypto.randomBytes(32).toString('hex');
+  sessions.set(token, { username: user.username, role: user.role, expiresAt: Date.now() + SESSION_TTL });
+  return token;
+}
+function getSession(token) {
+  if (!token) return null;
+  const s = sessions.get(token);
+  if (!s) return null;
+  if (Date.now() > s.expiresAt) { sessions.delete(token); return null; }
+  return s;
+}
+function destroySession(token) { if (token) sessions.delete(token); }
+// Nettoyage périodique des sessions expirées
+setInterval(() => {
+  const now = Date.now();
+  for (const [t, s] of sessions) if (now > s.expiresAt) sessions.delete(t);
+}, 3600 * 1000);
 
 // Renvoie un compte "public" (sans le hash du mot de passe)
 function publicAccount(username, d) {
@@ -162,24 +169,15 @@ function normalizeLimit(value, fallback = DEFAULT_RESULTS_LIMIT) {
 }
 
 function resultKey(game, item) {
-  // ✅ CORRECTIF : déduplication par ID de message Telegram pour TOUS les jeux.
-  //
-  // Auparavant on dédupliquait par #N. Deux problèmes :
-  //  1. Le compteur #N des canaux se RÉINITIALISE (observé : #N288 → #N1),
-  //     donc deux matchs distincts peuvent porter le même #N.
-  //  2. tools/harvest.js renumérote `n` de 1..N pour rétablir un ordre
-  //     chronologique continu. Le serveur, lui, lit le #N brut du canal.
-  //     Un match scrapé avec #N115 entrait alors en collision avec
-  //     l'enregistrement renuméroté n=115 et était rejeté comme doublon —
-  //     l'historique restait figé (compteurs immobiles dans les logs).
-  //
-  // Le msgId est unique, strictement croissant et jamais réutilisé.
-  if (item && Number.isFinite(Number(item.msgId))) return `m:${item.msgId}`;
-  // Aviator : pas de message Telegram (données générées) → multiplicateur + ts.
+  // Les jeux Telegram classiques ont un #N fiable.
+  if (item && item.n !== undefined && item.n !== null && game !== 'fifa4x4' && game !== 'aviator') return `n:${item.n}`;
+  // Aviator : clé par multiplicateur + timestamp (n souvent absent/0)
   if (game === 'aviator') return `av:${item?.multiplier ?? ''}:${item?.ts ?? ''}`;
-  // Repli pour les enregistrements anciens dépourvus de msgId.
-  if (item && item.n !== undefined && item.n !== null && game !== 'fifa4x4') {
-    return `n:${item.n}`;
+  // ✅ FIFA 4×4 : le n est désormais l'ID du message Telegram (stable et unique).
+  // On peut donc déduplider dessus, ce qui évite d'écraser deux rencontres
+  // différentes ayant par hasard les mêmes équipes et le même score.
+  if (game === 'fifa4x4' && item && Number.isFinite(Number(item.msgId ?? item.n))) {
+    return `m:${item.msgId ?? item.n}`;
   }
   return `${item?.home ?? ''}|${item?.away ?? ''}|${item?.score ?? ''}`;
 }
@@ -430,14 +428,6 @@ function parseBaccara(text) {
   const p = parseInt(match[2]), b = parseInt(match[3]);
   return {
     n: parseInt(match[1]),
-    // ✅ CORRECTIF : le moteur d'analyse et les tests statistiques lisent
-    // `player` / `banker`. Le serveur n'écrivait que `playerScore` /
-    // `bankerScore`, donc toute main écrite par le serveur était relue comme
-    // 0 contre 0, c'est-à-dire une ÉGALITÉ. Cela faisait exploser le taux de
-    // « Tie » (33 % au lieu de ~9,5 %) et détruisait la qualité du backtest.
-    // On écrit désormais les deux jeux de clés.
-    player: p,
-    banker: b,
     playerScore: p,
     bankerScore: b,
     playerCards: '',
@@ -732,22 +722,12 @@ async function pollUpcomingAll() {
 }
 
 // ── Vérifications au démarrage ────────────────────────────────
-// ✅ L'application utilise GROQ (endpoint /api/groq-analyze).
-// L'ancien endpoint Anthropic /analyze n'est plus appelé par le frontend :
-// il bascule automatiquement sur Groq et ANTHROPIC_API_KEY est facultative.
-// On n'avertit donc plus que sur GROQ_API_KEY, la seule clé réellement utile.
-if (!process.env.GROQ_API_KEY) {
-  console.warn('ℹ️  GROQ_API_KEY non configurée — les moteurs locaux fonctionnent normalement,');
-  console.warn('   seule l\'analyse IA enrichie est désactivée.');
-  console.warn('   Clé gratuite : https://console.groq.com/keys');
-  console.warn('   Puis ajoute dans le fichier .env :  GROQ_API_KEY=gsk_...');
-} else {
-  console.log('✅ GROQ_API_KEY détectée — analyse IA enrichie active.');
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.warn('⚠️  ANTHROPIC_API_KEY manquante. Les analyses IA échoueront.');
+  console.warn('   Définis-la avec:');
+  console.warn('   export ANTHROPIC_API_KEY=sk-ant-...  (Linux/Mac)');
+  console.warn('   ou set ANTHROPIC_API_KEY=sk-ant-... (Windows CMD)');
 }
-
-console.log('🔐 ' + security.corsSummary());
-console.log(`🔐 Rate-limit connexion : ${security.RL.maxAttempts} tentatives / ${Math.round(security.RL.windowMs / 60000)} min`);
-console.log(`🔐 Sessions persistées : ${sessionStore.count()} active(s) — data/sessions.json`);
 
 console.log('🔄 Récupération initiale...');
 
@@ -925,61 +905,66 @@ app.get('/status', (req, res) => {
 // ── Endpoint Analyse IA ──────────────────────────────────────
 // (https est déjà requis en haut du fichier — pas de doublon)
 
-// ── Endpoint /analyze — rétrocompatibilité, désormais servi par GROQ ──
-// Conservé pour d'anciens clients éventuels. Le frontend actuel utilise
-// /api/groq-analyze. Plus aucune dépendance à ANTHROPIC_API_KEY.
 app.post('/analyze', (req, res) => {
-  const { prompt } = req.body || {};
+  const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Prompt manquant' });
 
-  const groqKey = process.env.GROQ_API_KEY || '';
-  if (!groqKey) {
-    return res.status(503).json({
-      error: "GROQ_API_KEY non configurée. Ajoute GROQ_API_KEY=gsk_... dans le fichier .env " +
-             "(clé gratuite sur https://console.groq.com/keys). Les moteurs locaux restent disponibles."
-    });
+  const apiKey = process.env.ANTHROPIC_API_KEY || '';
+  if (!apiKey) {
+    console.error('❌ ANTHROPIC_API_KEY manquante !');
+    return res.status(500).json({ error: 'Clé API manquante. Lance: set ANTHROPIC_API_KEY=sk-ant-... && node server.js' });
   }
 
   const body = JSON.stringify({
-    model: GROQ_MODEL,
+    model: 'claude-sonnet-4-5-20250929',
     max_tokens: 1200,
-    temperature: 0.3,
     messages: [{ role: 'user', content: prompt }]
   });
 
-  const apiReq = https.request({
-    hostname: 'api.groq.com',
-    path: '/openai/v1/chat/completions',
+  const options = {
+    hostname: 'api.anthropic.com',
+    path: '/v1/messages',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Content-Length': Buffer.byteLength(body),
-      'Authorization': `Bearer ${groqKey}`
+      'anthropic-version': '2023-06-01',
+      'x-api-key': apiKey
     }
-  }, (apiRes) => {
+  };
+
+  console.log('[/analyze] Appel Claude API...');
+
+  const apiReq = https.request(options, (apiRes) => {
     let data = '';
-    apiRes.on('data', c => data += c);
+    apiRes.on('data', chunk => data += chunk);
     apiRes.on('end', () => {
+      console.log('[/analyze] HTTP status:', apiRes.statusCode);
       try {
         const parsed = JSON.parse(data);
         if (parsed.error) {
-          console.error('[/analyze] Erreur Groq:', parsed.error.message);
-          return res.status(502).json({ error: parsed.error.message || 'Erreur Groq API' });
+          console.error('[/analyze] Erreur Claude:', parsed.error);
+          return res.status(500).json({ error: parsed.error.message || 'Erreur Claude API' });
         }
-        const text = (parsed.choices?.[0]?.message?.content || '')
-          .replace(/```json|```/g, '').trim();
-        res.json({ raw: text, provider: 'groq', model: GROQ_MODEL });
-      } catch (e) {
-        res.status(502).json({ error: 'Réponse Groq illisible' });
+        const text = parsed.content.map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
+        console.log('[/analyze] OK. Début réponse:', text.substring(0, 100));
+        res.json({ raw: text });
+      } catch(e) {
+        console.error('[/analyze] Parse error:', e.message);
+        res.status(500).json({ error: 'Erreur parsing réponse Claude' });
       }
     });
   });
 
-  apiReq.on('error', e => res.status(502).json({ error: 'Erreur réseau: ' + e.message }));
-  apiReq.setTimeout(GROQ_TIMEOUT_MS, () => {
-    apiReq.destroy();
-    if (!res.headersSent) res.status(504).json({ error: 'Timeout Groq' });
+  apiReq.on('error', (e) => {
+    console.error('[/analyze] Erreur réseau:', e.message);
+    res.status(500).json({ error: 'Erreur réseau: ' + e.message });
   });
+  apiReq.setTimeout(30000, () => {
+    apiReq.destroy();
+    res.status(500).json({ error: 'Timeout Claude API (30s)' });
+  });
+
   apiReq.write(body);
   apiReq.end();
 });
@@ -991,30 +976,14 @@ app.post('/analyze', (req, res) => {
 // ══════════════════════════════════════════════════════════════════
 
 // Connexion (membre OU admin). Démarre le décompte d'abonnement à la 1ère connexion.
-app.post('/api/auth/login', security.loginRateLimit, (req, res) => {
+app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body || {};
   const user = String(username || '').trim();
   if (!user || !password) return res.status(400).json({ error: 'Identifiant et code d\'accès requis.' });
 
   const d = storage.getAccount(user);
-
-  // ✅ SÉCURITÉ : message d'erreur IDENTIQUE que l'identifiant existe ou non.
-  // Auparavant « Identifiant introuvable » vs « Code d'accès incorrect »
-  // permettait d'énumérer les comptes valides avant d'attaquer les mots de passe.
-  const echec = () => {
-    req.rateLimit.fail();
-    const reste = req.rateLimit.remaining();
-    const indice = reste > 0 && reste <= 3
-      ? ` (${reste} tentative${reste > 1 ? 's' : ''} restante${reste > 1 ? 's' : ''})`
-      : '';
-    return res.status(401).json({ error: `❌ Identifiant ou code d'accès incorrect.${indice}` });
-  };
-
-  if (!d) return echec();
-  if (!storage.verifyPassword(password, d.pass)) return echec();
-
-  // Connexion réussie → on remet le compteur de tentatives à zéro.
-  req.rateLimit.reset();
+  if (!d) return res.status(401).json({ error: '❌ Identifiant introuvable. Contacte l\'administrateur.' });
+  if (!storage.verifyPassword(password, d.pass)) return res.status(401).json({ error: '❌ Code d\'accès incorrect.' });
 
   if (d.role !== 'admin') {
     // Expiration
@@ -1159,11 +1128,7 @@ app.delete('/api/admin/accounts/:username', adminMiddleware, (req, res) => {
   if (!d) return res.status(404).json({ error: 'Compte introuvable.' });
   if (d.role === 'admin') return res.status(400).json({ error: 'Impossible de supprimer l\'administrateur.' });
   storage.deleteAccount(username);
-  // ✅ Révoquer les sessions actives : sans cela, un compte supprimé
-  //    restait connecté jusqu'à l'expiration de son token (12 h).
-  const revoquees = sessionStore.destroyUserSessions(username);
-  if (revoquees) console.log(`[sécurité] ${revoquees} session(s) révoquée(s) — compte supprimé : ${username}`);
-  res.json({ ok: true, sessionsRevoked: revoquees });
+  res.json({ ok: true });
 });
 
 // Activer / désactiver un compte
@@ -1172,13 +1137,7 @@ app.post('/api/admin/accounts/:username/toggle', adminMiddleware, (req, res) => 
   if (!d) return res.status(404).json({ error: 'Compte introuvable.' });
   d.active = !d.active;
   storage.upsertAccount(d);
-  // ✅ Une désactivation doit prendre effet immédiatement, pas à l'expiration du token.
-  let revoquees = 0;
-  if (!d.active) {
-    revoquees = sessionStore.destroyUserSessions(d.username);
-    if (revoquees) console.log(`[sécurité] ${revoquees} session(s) révoquée(s) — compte désactivé : ${d.username}`);
-  }
-  res.json({ account: publicAccount(d.username, d), sessionsRevoked: revoquees });
+  res.json({ account: publicAccount(d.username, d) });
 });
 
 // Réinitialiser la durée (efface la 1ère connexion → redémarre au prochain login)

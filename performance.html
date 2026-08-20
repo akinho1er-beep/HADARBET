@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HADAR — Performance réelle des moteurs</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#02040a;color:#e6edf7;font:14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:28px 18px 60px}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:26px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#00ff9d,#00d4ff);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px}
+.sub{color:#7d8da6;font-size:13px;margin-bottom:26px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:30px}
+.card{background:rgba(10,18,34,.7);border:1px solid rgba(0,255,157,.14);border-radius:14px;padding:16px}
+.card .k{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:#7d8da6;margin-bottom:7px}
+.card .v{font-size:26px;font-weight:800;color:#00ff9d;line-height:1.1}
+.card .d{font-size:11px;color:#7d8da6;margin-top:5px}
+.alert{background:linear-gradient(135deg,rgba(255,77,109,.11),rgba(245,166,35,.07));border:1px solid rgba(255,77,109,.32);border-left:3px solid #ff4d6d;border-radius:12px;padding:16px 18px;margin-bottom:26px}
+.alert h3{color:#ff4d6d;font-size:14px;margin-bottom:7px}
+.alert p{font-size:13px;color:#c9d6e8}
+.game{background:rgba(9,16,30,.6);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px;margin-bottom:20px}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+h2{font-size:18px;font-weight:700;color:#fff}
+.gmeta{font-size:11px;color:#7d8da6;font-family:ui-monospace,monospace}
+.dist{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.pill{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.24);color:#7fdcff;border-radius:20px;padding:3px 11px;font-size:11px;font-family:ui-monospace,monospace}
+.badge{display:inline-block;font-size:12px;padding:7px 13px;border-radius:9px;margin-bottom:12px}
+.badge.ok{background:rgba(0,255,157,.09);border:1px solid rgba(0,255,157,.28);color:#00ff9d}
+.badge.warn{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.32);color:#f5a623}
+.verdict{font-size:13px;padding:12px 15px;border-radius:10px;margin-bottom:15px;line-height:1.65}
+.verdict.bad{background:rgba(255,77,109,.09);border-left:3px solid #ff4d6d;color:#ffc4ce}
+.verdict.ok{background:rgba(0,255,157,.07);border-left:3px solid #00ff9d;color:#b6ffe2}
+.verdict strong{color:#fff}
+table.t{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+table.t th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:#7d8da6;padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.09);font-weight:600}
+table.t td{padding:8px 9px;border-bottom:1px solid rgba(255,255,255,.04)}
+table.t .num{text-align:right;font-family:ui-monospace,monospace}
+table.t tr.best td{background:rgba(0,255,157,.05)}
+table.t tr.bad td{background:rgba(255,77,109,.05)}
+.mname{font-weight:600}
+.chip{display:inline-block;font-size:9px;text-transform:uppercase;letter-spacing:.7px;padding:2px 6px;border-radius:5px;margin-left:5px;vertical-align:middle;font-weight:700}
+.chip.ok{background:rgba(0,255,157,.16);color:#00ff9d}
+.chip.cur{background:rgba(255,77,109,.16);color:#ff8fa3}
+.chip.ref{background:rgba(255,255,255,.08);color:#9fb0c8}
+.bwrap{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.bbar{height:15px;border-radius:4px;background:rgba(125,141,166,.28);flex-shrink:1}
+.bbar.best{background:linear-gradient(90deg,rgba(0,255,157,.35),rgba(0,255,157,.6))}
+.bbar.bad{background:linear-gradient(90deg,rgba(255,77,109,.3),rgba(255,77,109,.55))}
+.bwrap span{min-width:52px;text-align:right}
+.warn{color:#f5a623}.ok{color:#00ff9d}
+details{margin-top:13px;border-top:1px solid rgba(255,255,255,.06);padding-top:11px}
+summary{cursor:pointer;font-size:12px;color:#7fdcff;user-select:none}
+table.sm{font-size:11.5px;margin-top:9px}
+.note{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.16);border-radius:12px;padding:17px 19px;margin-top:26px;font-size:13px;color:#a9bdd6;line-height:1.75}
+.note h3{color:#00d4ff;font-size:14px;margin-bottom:9px}
+.note strong{color:#e6edf7}
+.note ul{margin:9px 0 0 19px}.note li{margin-bottom:5px}
+footer{text-align:center;color:#55627a;font-size:11px;margin-top:34px;font-family:ui-monospace,monospace}
+</style></head><body><div class="wrap">
+<h1>Performance réelle des moteurs HADAR</h1>
+<div class="sub">Backtest walk-forward sur données Telegram authentiques · rapport généré le 20/08/2026 09:41:29</div>
+
+<div class="cards">
+  <div class="card"><div class="k">Données réelles</div><div class="v">8 933</div><div class="d">résultats collectés sur 5 jeux</div></div>
+  <div class="card"><div class="k">Justesse maximale</div><div class="v">~51 %</div><div class="d">tous modèles, tous jeux confondus</div></div>
+  <div class="card"><div class="k">Indépendance</div><div class="v">5/5</div><div class="d">jeux sans aucun pattern exploitable</div></div>
+  <div class="card"><div class="k">Amorçage</div><div class="v">40</div><div class="d">matchs avant la 1re prédiction notée</div></div>
+</div>
+
+<div class="alert">
+  <h3>Résultat principal</h3>
+  <p>Sur <strong>Penalty 18</strong> et <strong>Penalty 22</strong>, le moteur <strong>Elo+Poisson fait moins bien qu'un tirage au sort</strong> (Brier 0,556 et 0,568 contre 0,500). Sur les autres jeux, le meilleur modèle est le plus simple possible : la <strong>fréquence de base</strong>. Aucun modèle sophistiqué ne bat cette référence. Les tirages étant statistiquement indépendants, c'est le comportement attendu d'un RNG correctement implémenté.</p>
+</div>
+
+
+  <section class="game">
+    <div class="ghead">
+      <h2>FIFA Penalty 18</h2>
+      <div class="gmeta">1779 résultats · 2026-08-13 → 2026-08-20 · 1737 prédictions testées</div>
+    </div>
+    <div class="dist"><span class="pill">H 55.1%</span><span class="pill">A 44.7%</span><span class="pill">D 0.2%</span></div>
+    <span class="badge ok">✅ Tirages indépendants — aucun pattern exploitable (χ²=0.45, p=0.511)</span>
+    <div class="verdict bad"><strong>Le moteur actuel fait pire que le hasard.</strong> Brier 0.5453 contre 0.5000 pour un tirage au sort, et une erreur de calibration 2× supérieure. Il faut le remplacer par « fréquence de base ».</div>
+    <table class="t">
+      <thead><tr><th>modèle</th><th class="num">justesse</th><th class="num">Brier ↓</th><th class="num">logloss ↓</th><th class="num">ECE ↓</th></tr></thead>
+      <tbody><tr class="best">
+      <td class="mname">fréquence de base <span class="chip ok">meilleur</span></td>
+      <td class="num">55.1%</td>
+      <td class="num"><div class="bwrap"><div class="bbar best" style="width:55.2%"></div><span>0.4959</span></div></td>
+      <td class="num">0.689</td>
+      <td class="num ">0.014</td>
+    </tr><tr class="">
+      <td class="mname">hasard <span class="chip ref">référence</span></td>
+      <td class="num">44.9%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:55.7%"></div><span>0.5000</span></div></td>
+      <td class="num">0.693</td>
+      <td class="num ">0.051</td>
+    </tr><tr class="bad">
+      <td class="mname">Elo+Poisson+H2H</td>
+      <td class="num">53.7%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:56.9%"></div><span>0.5109</span></div></td>
+      <td class="num">0.706</td>
+      <td class="num ">0.054</td>
+    </tr><tr class="bad">
+      <td class="mname">Elo seul</td>
+      <td class="num">50.5%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:57.8%"></div><span>0.5191</span></div></td>
+      <td class="num">0.714</td>
+      <td class="num ">0.081</td>
+    </tr><tr class="bad">
+      <td class="mname">Elo+Poisson <span class="chip cur">moteur actuel</span></td>
+      <td class="num">52.8%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:60.7%"></div><span>0.5453</span></div></td>
+      <td class="num">0.747</td>
+      <td class="num warn">0.126</td>
+    </tr><tr class="bad">
+      <td class="mname">toujours domicile</td>
+      <td class="num">55.1%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:100.0%"></div><span>0.8981</span></div></td>
+      <td class="num">6.204</td>
+      <td class="num warn">0.449</td>
+    </tr></tbody>
+    </table>
+    <details>
+      <summary>Calibration de « fréquence de base » — la confiance annoncée est-elle honnête ?</summary>
+      <table class="t sm">
+        <thead><tr><th>tranche</th><th class="num">n</th><th class="num">annoncé</th><th class="num">réel</th><th class="num">écart</th></tr></thead>
+        <tbody><tr><td>50-60%</td><td class="num">1651</td><td class="num">56.2%</td><td class="num">55.3%</td><td class="num ok">-0.9 pt</td></tr><tr><td>60-70%</td><td class="num">86</td><td class="num">60.3%</td><td class="num">51.2%</td><td class="num warn">-9.1 pt</td></tr></tbody>
+      </table>
+    </details>
+  </section>
+  <section class="game">
+    <div class="ghead">
+      <h2>FIFA Penalty 22</h2>
+      <div class="gmeta">1780 résultats · 2026-08-13 → 2026-08-20 · 1740 prédictions testées</div>
+    </div>
+    <div class="dist"><span class="pill">H 54.6%</span><span class="pill">A 45.4%</span></div>
+    <span class="badge ok">✅ Tirages indépendants — aucun pattern exploitable (χ²=0.03, p=0.834)</span>
+    <div class="verdict bad"><strong>Le moteur actuel fait pire que le hasard.</strong> Brier 0.5403 contre 0.5000 pour un tirage au sort, et une erreur de calibration 3× supérieure. Il faut le remplacer par « fréquence de base ».</div>
+    <table class="t">
+      <thead><tr><th>modèle</th><th class="num">justesse</th><th class="num">Brier ↓</th><th class="num">logloss ↓</th><th class="num">ECE ↓</th></tr></thead>
+      <tbody><tr class="best">
+      <td class="mname">fréquence de base <span class="chip ok">meilleur</span></td>
+      <td class="num">54.4%</td>
+      <td class="num"><div class="bwrap"><div class="bbar best" style="width:54.9%"></div><span>0.4969</span></div></td>
+      <td class="num">0.690</td>
+      <td class="num ">0.001</td>
+    </tr><tr class="">
+      <td class="mname">hasard <span class="chip ref">référence</span></td>
+      <td class="num">45.2%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:55.3%"></div><span>0.5000</span></div></td>
+      <td class="num">0.693</td>
+      <td class="num ">0.048</td>
+    </tr><tr class="bad">
+      <td class="mname">Elo+Poisson+H2H</td>
+      <td class="num">51.8%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:57.1%"></div><span>0.5164</span></div></td>
+      <td class="num">0.712</td>
+      <td class="num ">0.061</td>
+    </tr><tr class="bad">
+      <td class="mname">Elo seul</td>
+      <td class="num">51.5%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:57.2%"></div><span>0.5170</span></div></td>
+      <td class="num">0.712</td>
+      <td class="num ">0.078</td>
+    </tr><tr class="bad">
+      <td class="mname">Elo+Poisson <span class="chip cur">moteur actuel</span></td>
+      <td class="num">51.7%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:59.7%"></div><span>0.5403</span></div></td>
+      <td class="num">0.741</td>
+      <td class="num warn">0.129</td>
+    </tr><tr class="bad">
+      <td class="mname">toujours domicile</td>
+      <td class="num">54.8%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:100.0%"></div><span>0.9046</span></div></td>
+      <td class="num">6.249</td>
+      <td class="num warn">0.452</td>
+    </tr></tbody>
+    </table>
+    <details>
+      <summary>Calibration de « fréquence de base » — la confiance annoncée est-elle honnête ?</summary>
+      <table class="t sm">
+        <thead><tr><th>tranche</th><th class="num">n</th><th class="num">annoncé</th><th class="num">réel</th><th class="num">écart</th></tr></thead>
+        <tbody><tr><td>50-60%</td><td class="num">1737</td><td class="num">54.4%</td><td class="num">54.4%</td><td class="num ok">+0.0 pt</td></tr><tr><td>60-70%</td><td class="num">3</td><td class="num">60.5%</td><td class="num">33.3%</td><td class="num warn">-27.2 pt</td></tr></tbody>
+      </table>
+    </details>
+  </section>
+  <section class="game">
+    <div class="ghead">
+      <h2>FIFA 4×4</h2>
+      <div class="gmeta">1777 résultats · 2026-08-02 → 2026-08-20 · 1737 prédictions testées</div>
+    </div>
+    <div class="dist"><span class="pill">A 46.7%</span><span class="pill">H 44.2%</span><span class="pill">D 9.1%</span></div>
+    <span class="badge ok">✅ Tirages indépendants — aucun pattern exploitable (χ²=2.74, p=0.606)</span>
+    <div class="verdict ok"><strong>Meilleur modèle : « Elo seul »</strong> — Brier 0.5783, soit 13.3 % de mieux que le hasard. Sa justesse réelle plafonne à <strong>50.5 %</strong>.</div>
+    <table class="t">
+      <thead><tr><th>modèle</th><th class="num">justesse</th><th class="num">Brier ↓</th><th class="num">logloss ↓</th><th class="num">ECE ↓</th></tr></thead>
+      <tbody><tr class="best">
+      <td class="mname">Elo seul <span class="chip ok">meilleur</span></td>
+      <td class="num">50.5%</td>
+      <td class="num"><div class="bwrap"><div class="bbar best" style="width:51.7%"></div><span>0.5783</span></div></td>
+      <td class="num">0.936</td>
+      <td class="num ">0.050</td>
+    </tr><tr class="">
+      <td class="mname">fréquence de base</td>
+      <td class="num">45.6%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:51.9%"></div><span>0.5799</span></div></td>
+      <td class="num">0.938</td>
+      <td class="num ">0.008</td>
+    </tr><tr class="">
+      <td class="mname">Elo+Poisson+H2H</td>
+      <td class="num">50.7%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:54.8%"></div><span>0.6122</span></div></td>
+      <td class="num">1.003</td>
+      <td class="num warn">0.122</td>
+    </tr><tr class="">
+      <td class="mname">Elo+Poisson <span class="chip cur">moteur actuel</span></td>
+      <td class="num">50.8%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:55.7%"></div><span>0.6222</span></div></td>
+      <td class="num">1.013</td>
+      <td class="num warn">0.146</td>
+    </tr><tr class="">
+      <td class="mname">hasard <span class="chip ref">référence</span></td>
+      <td class="num">46.7%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:59.6%"></div><span>0.6667</span></div></td>
+      <td class="num">1.099</td>
+      <td class="num warn">0.134</td>
+    </tr><tr class="bad">
+      <td class="mname">toujours domicile</td>
+      <td class="num">44.1%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:100.0%"></div><span>1.1180</span></div></td>
+      <td class="num">7.723</td>
+      <td class="num warn">0.559</td>
+    </tr></tbody>
+    </table>
+    <details>
+      <summary>Calibration de « Elo seul » — la confiance annoncée est-elle honnête ?</summary>
+      <table class="t sm">
+        <thead><tr><th>tranche</th><th class="num">n</th><th class="num">annoncé</th><th class="num">réel</th><th class="num">écart</th></tr></thead>
+        <tbody><tr><td>40-50%</td><td class="num">462</td><td class="num">47.6%</td><td class="num">48.1%</td><td class="num ok">+0.4 pt</td></tr><tr><td>50-60%</td><td class="num">855</td><td class="num">54.7%</td><td class="num">49.4%</td><td class="num ok">-5.3 pt</td></tr><tr><td>60-70%</td><td class="num">380</td><td class="num">64.0%</td><td class="num">55.5%</td><td class="num warn">-8.4 pt</td></tr><tr><td>70-80%</td><td class="num">40</td><td class="num">72.0%</td><td class="num">55.0%</td><td class="num warn">-17.0 pt</td></tr></tbody>
+      </table>
+    </details>
+  </section>
+  <section class="game">
+    <div class="ghead">
+      <h2>Baccara</h2>
+      <div class="gmeta">1800 résultats · 2026-08-18 → 2026-08-20 · 1760 prédictions testées</div>
+    </div>
+    <div class="dist"><span class="pill">P 44.6%</span><span class="pill">B 37.5%</span><span class="pill">T 17.9%</span></div>
+    <span class="badge ok">✅ Tirages indépendants — aucun pattern exploitable (χ²=2.72, p=0.609)</span>
+    <div class="verdict ok"><strong>Meilleur modèle : « fréquence de base »</strong> — Brier 0.6302, soit 5.5 % de mieux que le hasard. Sa justesse réelle plafonne à <strong>44.1 %</strong>.</div>
+    <table class="t">
+      <thead><tr><th>modèle</th><th class="num">justesse</th><th class="num">Brier ↓</th><th class="num">logloss ↓</th><th class="num">ECE ↓</th></tr></thead>
+      <tbody><tr class="best">
+      <td class="mname">fréquence de base <span class="chip ok">meilleur</span></td>
+      <td class="num">44.1%</td>
+      <td class="num"><div class="bwrap"><div class="bbar best" style="width:94.5%"></div><span>0.6302</span></div></td>
+      <td class="num">1.039</td>
+      <td class="num ">0.013</td>
+    </tr><tr class="">
+      <td class="mname">suivi de série</td>
+      <td class="num">41.1%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:95.6%"></div><span>0.6372</span></div></td>
+      <td class="num">1.048</td>
+      <td class="num ">0.046</td>
+    </tr><tr class="">
+      <td class="mname">moteur actuel <span class="chip cur">moteur actuel</span></td>
+      <td class="num">41.5%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:95.6%"></div><span>0.6373</span></div></td>
+      <td class="num">1.057</td>
+      <td class="num ">0.030</td>
+    </tr><tr class="">
+      <td class="mname">théorie pure</td>
+      <td class="num">37.2%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:96.4%"></div><span>0.6429</span></div></td>
+      <td class="num">1.074</td>
+      <td class="num ">0.086</td>
+    </tr><tr class="">
+      <td class="mname">hasard <span class="chip ref">référence</span></td>
+      <td class="num">37.2%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:100.0%"></div><span>0.6667</span></div></td>
+      <td class="num">1.099</td>
+      <td class="num ">0.039</td>
+    </tr></tbody>
+    </table>
+    <details>
+      <summary>Calibration de « fréquence de base » — la confiance annoncée est-elle honnête ?</summary>
+      <table class="t sm">
+        <thead><tr><th>tranche</th><th class="num">n</th><th class="num">annoncé</th><th class="num">réel</th><th class="num">écart</th></tr></thead>
+        <tbody><tr><td>40-50%</td><td class="num">1758</td><td class="num">42.9%</td><td class="num">44.1%</td><td class="num ok">+1.2 pt</td></tr><tr><td>50-60%</td><td class="num">2</td><td class="num">50.0%</td><td class="num">0.0%</td><td class="num warn">-50.0 pt</td></tr></tbody>
+      </table>
+    </details>
+  </section>
+  <section class="game">
+    <div class="ghead">
+      <h2>Jeu 21</h2>
+      <div class="gmeta">1797 résultats · 2026-08-18 → 2026-08-20 · 1757 prédictions testées</div>
+    </div>
+    <div class="dist"><span class="pill">LOSE 58.9%</span><span class="pill">WIN 33.5%</span><span class="pill">PUSH 7.6%</span></div>
+    <span class="badge ok">✅ Tirages indépendants — aucun pattern exploitable (χ²=3.39, p=0.498)</span>
+    <div class="verdict ok"><strong>Meilleur modèle : « fréquence de base »</strong> — Brier 0.5386, soit 19.2 % de mieux que le hasard. Sa justesse réelle plafonne à <strong>58.6 %</strong>.</div>
+    <table class="t">
+      <thead><tr><th>modèle</th><th class="num">justesse</th><th class="num">Brier ↓</th><th class="num">logloss ↓</th><th class="num">ECE ↓</th></tr></thead>
+      <tbody><tr class="best">
+      <td class="mname">fréquence de base <span class="chip ok">meilleur</span></td>
+      <td class="num">58.6%</td>
+      <td class="num"><div class="bwrap"><div class="bbar best" style="width:65.1%"></div><span>0.5386</span></div></td>
+      <td class="num">0.880</td>
+      <td class="num ">0.013</td>
+    </tr><tr class="">
+      <td class="mname">hasard <span class="chip ref">référence</span></td>
+      <td class="num">58.6%</td>
+      <td class="num"><div class="bwrap"><div class="bbar " style="width:80.6%"></div><span>0.6667</span></div></td>
+      <td class="num">1.099</td>
+      <td class="num warn">0.253</td>
+    </tr><tr class="bad">
+      <td class="mname">toujours LOSE</td>
+      <td class="num">58.6%</td>
+      <td class="num"><div class="bwrap"><div class="bbar bad" style="width:100.0%"></div><span>0.8275</span></div></td>
+      <td class="num">5.716</td>
+      <td class="num warn">0.414</td>
+    </tr></tbody>
+    </table>
+    <details>
+      <summary>Calibration de « fréquence de base » — la confiance annoncée est-elle honnête ?</summary>
+      <table class="t sm">
+        <thead><tr><th>tranche</th><th class="num">n</th><th class="num">annoncé</th><th class="num">réel</th><th class="num">écart</th></tr></thead>
+        <tbody><tr><td>50-60%</td><td class="num">1329</td><td class="num">58.5%</td><td class="num">59.0%</td><td class="num ok">+0.4 pt</td></tr><tr><td>60-70%</td><td class="num">428</td><td class="num">61.4%</td><td class="num">57.5%</td><td class="num ok">-3.9 pt</td></tr></tbody>
+      </table>
+    </details>
+  </section>
+
+<div class="note">
+  <h3>Comment lire ces chiffres</h3>
+  <ul>
+    <li><strong>Justesse (accuracy)</strong> — % de bons pronostics. Trompeuse seule : prédire toujours l'issue la plus fréquente donne déjà un bon score.</li>
+    <li><strong>Score de Brier ↓</strong> — la vraie métrique. Mesure la qualité des <em>probabilités</em>, pas juste du choix final. Un modèle qui annonce 90 % et se trompe est lourdement pénalisé. <strong>Plus bas = mieux.</strong></li>
+    <li><strong>Logloss ↓</strong> — même esprit, sanctionne encore plus durement la confiance mal placée.</li>
+    <li><strong>ECE ↓</strong> — erreur de calibration. Si le modèle annonce 70 % de confiance, a-t-il raison 70 % du temps ? <strong>0,00 = parfaitement honnête ; au-dessus de 0,10 = surconfiance.</strong></li>
+    <li><strong>Test χ² d'indépendance</strong> — le résultat précédent informe-t-il le suivant ? Si p &gt; 0,05, la réponse est non : aucune stratégie de série, pattern ou « écart » n'a de fondement.</li>
+  </ul>
+</div>
+
+<footer>HADAR BetAnalytics · validation statistique · aucune donnée simulée</footer>
+</div></body></html>
