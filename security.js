@@ -118,10 +118,29 @@ function buildCors() {
   return function corsMiddleware(req, res, next) {
     const origin = req.headers.origin;
 
-    // Pas d'en-tête Origin = même origine, ou appel serveur/curl : rien à faire.
+    // Pas d'en-tête Origin = appel serveur, curl, ou navigation simple.
     if (!origin) return next();
 
     const propre = origin.replace(/\/$/, '');
+
+    // ✅ CORRECTIF CRITIQUE : les navigateurs envoient AUSSI un en-tête Origin
+    // pour les requêtes de MÊME origine (tout POST/PUT/DELETE, y compris le
+    // formulaire de connexion). Sans cette comparaison avec l'hôte de la
+    // requête, l'application se bloquait elle-même : « Origine non autorisée »
+    // dès la connexion. On considère donc comme légitime toute origine dont
+    // l'hôte correspond à celui servant la requête (peu importe le protocole,
+    // http en local vs https derrière le proxy Railway).
+    let memeOrigine = false;
+    try {
+      const hoteRequete = String(req.headers['x-forwarded-host'] || req.headers.host || '').trim();
+      if (hoteRequete) {
+        const hoteOrigine = new URL(propre).host;
+        memeOrigine = hoteOrigine === hoteRequete;
+      }
+    } catch (_) { /* Origin malformé : traité comme externe */ }
+
+    if (memeOrigine) return next();
+
     const autorise = toutAutoriser || liste.includes(propre);
 
     if (autorise) {

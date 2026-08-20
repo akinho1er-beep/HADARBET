@@ -19,6 +19,7 @@ const ROOT = __dirname;
 const HTML = fs.readFileSync(path.join(ROOT, 'betting-analyzer.html'), 'utf8');
 const SERVER = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
 const STORAGE = fs.readFileSync(path.join(ROOT, 'storage.js'), 'utf8');
+const GITIGNORE = fs.existsSync(path.join(ROOT, '.gitignore')) ? fs.readFileSync(path.join(ROOT, '.gitignore'), 'utf8') : '';
 
 let pass = 0, fail = 0, skipped = 0;
 const failures = [];
@@ -205,6 +206,9 @@ check('7t', "Anti-énumération : message d'erreur unique",
   !SERVER.includes('Identifiant introuvable. Contacte'));
 check('7t', 'cors() grand ouvert remplacé', !SERVER.includes('app.use(cors());'));
 check('7t', 'CORS piloté par ALLOWED_ORIGINS', SECU.includes('ALLOWED_ORIGINS'));
+check('7t', 'CORS : requêtes de même origine acceptées (anti-auto-blocage)',
+  SECU.includes('memeOrigine') && SECU.includes('x-forwarded-host'),
+  'les navigateurs envoient Origin même en même origine sur les POST');
 check('7t', 'En-têtes de sécurité envoyés',
   SECU.includes('X-Content-Type-Options') && SECU.includes('X-Frame-Options'));
 check('7t', 'Sessions écrites sur disque', SESS.includes('sessions.json'));
@@ -214,6 +218,17 @@ check('7t', 'Révocation à la désactivation/suppression',
   SERVER.includes('sessionStore.destroyUserSessions'));
 check('7t', 'trust proxy activé (IP réelle derrière Railway)',
   SERVER.includes("app.set('trust proxy', 1)"));
+
+title('7quater. DÉPLOIEMENT RAILWAY');
+check('7q', 'railway.json présent', fs.existsSync(path.join(ROOT,'railway.json')));
+check('7q', 'DATA_DIR respecté par storage.js et sessions.js',
+  STORAGE.includes('process.env.DATA_DIR') && SESS.includes('process.env.DATA_DIR'));
+check('7q', 'PORT injecté par la plateforme', SERVER.includes('process.env.PORT'));
+check('7q', "Écoute sur 0.0.0.0 (requis en conteneur)", SERVER.includes("app.listen(PORT, '0.0.0.0'"));
+check('7q', 'Chemin de stockage affiché au démarrage (vérif. du volume)',
+  SERVER.includes('sessionStore.file') && SERVER.includes('sessionStore.dataDir'));
+check('7q', 'Secrets exclus de Git',
+  GITIGNORE.includes('.env') && GITIGNORE.includes('data/accounts.json') && GITIGNORE.includes('data/sessions.json'));
 
 title('8. DONNÉES — le backtest repose-t-il sur du réel ?');
 // ══════════════════════════════════════════════════════════

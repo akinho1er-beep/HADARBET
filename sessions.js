@@ -126,5 +126,8 @@ setInterval(() => {
 
 module.exports = {
   createSession, getSession, destroySession, destroyUserSessions,
-  count, flush: ecrireMaintenant, TTL
+  count, flush: ecrireMaintenant, TTL,
+  // Chemin réel du fichier — permet d'afficher au démarrage où les sessions
+  // sont stockées (indispensable pour vérifier qu'un volume Railway est bien monté).
+  file: FILE, dataDir: DATA_DIR
 };

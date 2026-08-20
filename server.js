@@ -747,7 +747,8 @@ if (!process.env.GROQ_API_KEY) {
 
 console.log('🔐 ' + security.corsSummary());
 console.log(`🔐 Rate-limit connexion : ${security.RL.maxAttempts} tentatives / ${Math.round(security.RL.windowMs / 60000)} min`);
-console.log(`🔐 Sessions persistées : ${sessionStore.count()} active(s) — data/sessions.json`);
+console.log(`🔐 Sessions persistées : ${sessionStore.count()} active(s) — ${sessionStore.file}`);
+console.log(`💾 Données : ${sessionStore.dataDir}` + (process.env.DATA_DIR ? '  (DATA_DIR)' : '  (local — sur Railway, monte un volume et définis DATA_DIR)'));
 
 console.log('🔄 Récupération initiale...');
 
