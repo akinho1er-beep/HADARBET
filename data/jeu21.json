@@ -1,5 +1,621 @@
 [
   {
+    "n": 808,
+    "player": 20,
+    "dealer": 22,
+    "result": "WIN",
+    "ts": 1787318826000,
+    "msgId": 2274830
+  },
+  {
+    "n": 807,
+    "player": 18,
+    "dealer": 27,
+    "result": "WIN",
+    "ts": 1787318764000,
+    "msgId": 2274829
+  },
+  {
+    "n": 806,
+    "player": 19,
+    "dealer": 27,
+    "result": "WIN",
+    "ts": 1787318707000,
+    "msgId": 2274828
+  },
+  {
+    "n": 805,
+    "player": 26,
+    "dealer": 12,
+    "result": "LOSE",
+    "ts": 1787318643000,
+    "msgId": 2274827
+  },
+  {
+    "n": 804,
+    "player": 19,
+    "dealer": 22,
+    "result": "WIN",
+    "ts": 1787318598000,
+    "msgId": 2274826
+  },
+  {
+    "n": 803,
+    "player": 19,
+    "dealer": 20,
+    "result": "LOSE",
+    "ts": 1787318528000,
+    "msgId": 2274825
+  },
+  {
+    "n": 802,
+    "player": 21,
+    "dealer": 28,
+    "result": "WIN",
+    "ts": 1787318466000,
+    "msgId": 2274824
+  },
+  {
+    "n": 801,
+    "player": 19,
+    "dealer": 22,
+    "result": "WIN",
+    "ts": 1787318411000,
+    "msgId": 2274823
+  },
+  {
+    "n": 800,
+    "player": 19,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787318344000,
+    "msgId": 2274822
+  },
+  {
+    "n": 799,
+    "player": 26,
+    "dealer": 13,
+    "result": "LOSE",
+    "ts": 1787318292000,
+    "msgId": 2274821
+  },
+  {
+    "n": 798,
+    "player": 18,
+    "dealer": 19,
+    "result": "LOSE",
+    "ts": 1787318225000,
+    "msgId": 2274820
+  },
+  {
+    "n": 797,
+    "player": 17,
+    "dealer": 17,
+    "result": "PUSH",
+    "ts": 1787318163000,
+    "msgId": 2274819
+  },
+  {
+    "n": 796,
+    "player": 20,
+    "dealer": 22,
+    "result": "WIN",
+    "ts": 1787318111000,
+    "msgId": 2274818
+  },
+  {
+    "n": 795,
+    "player": 27,
+    "dealer": 14,
+    "result": "LOSE",
+    "ts": 1787318043000,
+    "msgId": 2274817
+  },
+  {
+    "n": 794,
+    "player": 8,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787317992000,
+    "msgId": 2274816
+  },
+  {
+    "n": 793,
+    "player": 22,
+    "dealer": 18,
+    "result": "LOSE",
+    "ts": 1787317928000,
+    "msgId": 2274815
+  },
+  {
+    "n": 792,
+    "player": 21,
+    "dealer": 26,
+    "result": "WIN",
+    "ts": 1787317863000,
+    "msgId": 2274814
+  },
+  {
+    "n": 791,
+    "player": 18,
+    "dealer": 28,
+    "result": "WIN",
+    "ts": 1787317806000,
+    "msgId": 2274813
+  },
+  {
+    "n": 790,
+    "player": 24,
+    "dealer": 11,
+    "result": "LOSE",
+    "ts": 1787317749000,
+    "msgId": 2274812
+  },
+  {
+    "n": 789,
+    "player": 19,
+    "dealer": 22,
+    "result": "WIN",
+    "ts": 1787317687000,
+    "msgId": 2274811
+  },
+  {
+    "n": 788,
+    "player": 22,
+    "dealer": 10,
+    "result": "LOSE",
+    "ts": 1787317630000,
+    "msgId": 2274810
+  },
+  {
+    "n": 787,
+    "player": 19,
+    "dealer": 24,
+    "result": "WIN",
+    "ts": 1787317573000,
+    "msgId": 2274809
+  },
+  {
+    "n": 786,
+    "player": 27,
+    "dealer": 16,
+    "result": "LOSE",
+    "ts": 1787317511000,
+    "msgId": 2274808
+  },
+  {
+    "n": 785,
+    "player": 21,
+    "dealer": 20,
+    "result": "WIN",
+    "ts": 1787317443000,
+    "msgId": 2274807
+  },
+  {
+    "n": 784,
+    "player": 18,
+    "dealer": 20,
+    "result": "LOSE",
+    "ts": 1787317386000,
+    "msgId": 2274806
+  },
+  {
+    "n": 783,
+    "player": 21,
+    "dealer": 25,
+    "result": "WIN",
+    "ts": 1787317329000,
+    "msgId": 2274805
+  },
+  {
+    "n": 782,
+    "player": 22,
+    "dealer": 6,
+    "result": "LOSE",
+    "ts": 1787317272000,
+    "msgId": 2274804
+  },
+  {
+    "n": 781,
+    "player": 20,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787317204000,
+    "msgId": 2274803
+  },
+  {
+    "n": 780,
+    "player": 18,
+    "dealer": 23,
+    "result": "WIN",
+    "ts": 1787317150000,
+    "msgId": 2274802
+  },
+  {
+    "n": 779,
+    "player": 20,
+    "dealer": 27,
+    "result": "WIN",
+    "ts": 1787317088000,
+    "msgId": 2274801
+  },
+  {
+    "n": 778,
+    "player": 23,
+    "dealer": 18,
+    "result": "LOSE",
+    "ts": 1787317029000,
+    "msgId": 2274800
+  },
+  {
+    "n": 777,
+    "player": 21,
+    "dealer": 25,
+    "result": "WIN",
+    "ts": 1787316970000,
+    "msgId": 2274799
+  },
+  {
+    "n": 776,
+    "player": 18,
+    "dealer": 18,
+    "result": "PUSH",
+    "ts": 1787316908000,
+    "msgId": 2274798
+  },
+  {
+    "n": 775,
+    "player": 21,
+    "dealer": 26,
+    "result": "WIN",
+    "ts": 1787316845000,
+    "msgId": 2274797
+  },
+  {
+    "n": 774,
+    "player": 25,
+    "dealer": 10,
+    "result": "LOSE",
+    "ts": 1787316791000,
+    "msgId": 2274796
+  },
+  {
+    "n": 33,
+    "player": 20,
+    "dealer": 27,
+    "result": "WIN",
+    "ts": 1787272328000,
+    "msgId": 2274721
+  },
+  {
+    "n": 32,
+    "player": 21,
+    "dealer": 22,
+    "result": "WIN",
+    "ts": 1787272266000,
+    "msgId": 2274720
+  },
+  {
+    "n": 31,
+    "player": 18,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787272209000,
+    "msgId": 2274719
+  },
+  {
+    "n": 30,
+    "player": 25,
+    "dealer": 19,
+    "result": "LOSE",
+    "ts": 1787272143000,
+    "msgId": 2274718
+  },
+  {
+    "n": 29,
+    "player": 27,
+    "dealer": 12,
+    "result": "LOSE",
+    "ts": 1787272084000,
+    "msgId": 2274717
+  },
+  {
+    "n": 28,
+    "player": 21,
+    "dealer": 22,
+    "result": "WIN",
+    "ts": 1787272025000,
+    "msgId": 2274716
+  },
+  {
+    "n": 27,
+    "player": 20,
+    "dealer": 25,
+    "result": "WIN",
+    "ts": 1787271969000,
+    "msgId": 2274715
+  },
+  {
+    "n": 26,
+    "player": 14,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787271907000,
+    "msgId": 2274714
+  },
+  {
+    "n": 25,
+    "player": 19,
+    "dealer": 28,
+    "result": "WIN",
+    "ts": 1787271849000,
+    "msgId": 2274713
+  },
+  {
+    "n": 24,
+    "player": 20,
+    "dealer": 26,
+    "result": "WIN",
+    "ts": 1787271791000,
+    "msgId": 2274712
+  },
+  {
+    "n": 23,
+    "player": 21,
+    "dealer": 25,
+    "result": "WIN",
+    "ts": 1787271729000,
+    "msgId": 2274711
+  },
+  {
+    "n": 22,
+    "player": 24,
+    "dealer": 11,
+    "result": "LOSE",
+    "ts": 1787271672000,
+    "msgId": 2274710
+  },
+  {
+    "n": 21,
+    "player": 22,
+    "dealer": 10,
+    "result": "LOSE",
+    "ts": 1787271610000,
+    "msgId": 2274709
+  },
+  {
+    "n": 20,
+    "player": 19,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787271543000,
+    "msgId": 2274708
+  },
+  {
+    "n": 19,
+    "player": 20,
+    "dealer": 20,
+    "result": "PUSH",
+    "ts": 1787271487000,
+    "msgId": 2274707
+  },
+  {
+    "n": 18,
+    "player": 20,
+    "dealer": 20,
+    "result": "PUSH",
+    "ts": 1787271425000,
+    "msgId": 2274706
+  },
+  {
+    "n": 17,
+    "player": 25,
+    "dealer": 6,
+    "result": "LOSE",
+    "ts": 1787271368000,
+    "msgId": 2274705
+  },
+  {
+    "n": 16,
+    "player": 13,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787271307000,
+    "msgId": 2274704
+  },
+  {
+    "n": 15,
+    "player": 20,
+    "dealer": 23,
+    "result": "WIN",
+    "ts": 1787271250000,
+    "msgId": 2274703
+  },
+  {
+    "n": 14,
+    "player": 19,
+    "dealer": 25,
+    "result": "WIN",
+    "ts": 1787271188000,
+    "msgId": 2274702
+  },
+  {
+    "n": 13,
+    "player": 21,
+    "dealer": 11,
+    "result": "WIN",
+    "ts": 1787271131000,
+    "msgId": 2274701
+  },
+  {
+    "n": 12,
+    "player": 24,
+    "dealer": 18,
+    "result": "LOSE",
+    "ts": 1787271071000,
+    "msgId": 2274700
+  },
+  {
+    "n": 11,
+    "player": 21,
+    "dealer": 23,
+    "result": "WIN",
+    "ts": 1787271005000,
+    "msgId": 2274699
+  },
+  {
+    "n": 10,
+    "player": 28,
+    "dealer": 19,
+    "result": "LOSE",
+    "ts": 1787270943000,
+    "msgId": 2274698
+  },
+  {
+    "n": 9,
+    "player": 21,
+    "dealer": 12,
+    "result": "WIN",
+    "ts": 1787270891000,
+    "msgId": 2274697
+  },
+  {
+    "n": 8,
+    "player": 20,
+    "dealer": 20,
+    "result": "PUSH",
+    "ts": 1787270828000,
+    "msgId": 2274696
+  },
+  {
+    "n": 7,
+    "player": 21,
+    "dealer": 23,
+    "result": "WIN",
+    "ts": 1787270771000,
+    "msgId": 2274695
+  },
+  {
+    "n": 6,
+    "player": 22,
+    "dealer": 11,
+    "result": "LOSE",
+    "ts": 1787270712000,
+    "msgId": 2274694
+  },
+  {
+    "n": 5,
+    "player": 19,
+    "dealer": 22,
+    "result": "WIN",
+    "ts": 1787270645000,
+    "msgId": 2274693
+  },
+  {
+    "n": 4,
+    "player": 21,
+    "dealer": 24,
+    "result": "WIN",
+    "ts": 1787270589000,
+    "msgId": 2274692
+  },
+  {
+    "n": 3,
+    "player": 23,
+    "dealer": 18,
+    "result": "LOSE",
+    "ts": 1787270530000,
+    "msgId": 2274691
+  },
+  {
+    "n": 2,
+    "player": 18,
+    "dealer": 18,
+    "result": "PUSH",
+    "ts": 1787270468000,
+    "msgId": 2274690
+  },
+  {
+    "n": 1,
+    "player": 20,
+    "dealer": 20,
+    "result": "PUSH",
+    "ts": 1787270406000,
+    "msgId": 2274689
+  },
+  {
+    "n": 1440,
+    "player": 22,
+    "dealer": 17,
+    "result": "LOSE",
+    "ts": 1787270350000,
+    "msgId": 2274688
+  },
+  {
+    "n": 1439,
+    "player": 23,
+    "dealer": 12,
+    "result": "LOSE",
+    "ts": 1787270294000,
+    "msgId": 2274687
+  },
+  {
+    "n": 1438,
+    "player": 21,
+    "dealer": 20,
+    "result": "WIN",
+    "ts": 1787270229000,
+    "msgId": 2274686
+  },
+  {
+    "n": 1437,
+    "player": 19,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787270167000,
+    "msgId": 2274685
+  },
+  {
+    "n": 1436,
+    "player": 30,
+    "dealer": 11,
+    "result": "LOSE",
+    "ts": 1787270111000,
+    "msgId": 2274684
+  },
+  {
+    "n": 1435,
+    "player": 26,
+    "dealer": 18,
+    "result": "LOSE",
+    "ts": 1787270044000,
+    "msgId": 2274683
+  },
+  {
+    "n": 1434,
+    "player": 25,
+    "dealer": 17,
+    "result": "LOSE",
+    "ts": 1787269988000,
+    "msgId": 2274682
+  },
+  {
+    "n": 1433,
+    "player": 22,
+    "dealer": 17,
+    "result": "LOSE",
+    "ts": 1787269926000,
+    "msgId": 2274681
+  },
+  {
+    "n": 1358,
+    "player": 17,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787265433000,
+    "msgId": 2274606
+  },
+  {
     "n": 1357,
     "player": 18,
     "dealer": 20,

@@ -177,3 +177,53 @@ tous avec le numéro réel du canal.
 **Conclusions statistiques inchangées** sur ce dataset élargi :
 indépendance confirmée (p = 0,20 à 0,70), « fréquence de base » gagnante
 partout sauf FIFA 4×4 (« Elo seul », +13,4 %).
+
+---
+
+## 17. 🔴 Calendrier bookmaker vide (FIFA 4×4, Penalty 18/22) — CORRIGÉ
+
+**Symptôme.** Les trois jeux « ne diffusaient plus » : onglet *En direct* vide et
+pronostic figé sur l'affiche du match précédent. Telegram fonctionnait pourtant.
+
+**Cause.** 1xBet bloque le scraping HTML depuis les IP d'hébergeur (Railway, AWS…)
+en renvoyant une page `/block`. En local (IP résidentielle) cela passait, d'où
+l'illusion d'une régression. Les 3 jeux touchés sont exactement ceux de
+`UPCOMING_GAMES = ['fifa4x4','penalty18','penalty22']` — les seuls à dépendre du
+calendrier bookmaker. Baccara et Jeu 21 n'en dépendent pas et n'ont jamais été
+affectés.
+
+**Correctif — API JSON officielle.** L'endpoint `service-api` utilisé par
+l'application web de 1xBet répond normalement en JSON, sans blocage :
+
+```
+/service-api/LiveFeed/Get1x2_VZip?sports=85&count=200&lng=fr&mode=4   (en cours)
+/service-api/LineFeed/Get1x2_VZip?sports=85&count=200&lng=fr&mode=4   (à venir)
+```
+
+Filtrage par `LI` (identifiant de championnat), identique aux slugs déjà présents :
+`2648573` FIFA 4×4 · `1939256` Penalty 18 · `2334988` Penalty 22.
+
+Cette voie est désormais **prioritaire** ; le scraping HTML reste en **secours**
+automatique, et `PROXY_URL` s'applique aussi à l'API.
+
+**Correctif complémentaire — noms d'équipes.** L'API renvoie les noms complets
+(« Paris Saint-Germain », « Sheffield United ») alors que les canaux Telegram
+utilisent des formes courtes (« PSG », « Sheffield Utd »). Sans harmonisation, la
+rencontre annoncée n'était pas reliée à l'historique de l'équipe et le pronostic
+restait vide. Table de correspondance ajoutée (`_normEquipe`).
+
+**Résultat vérifié :**
+
+| jeu | rencontres | correspondance des noms |
+|---|---|---|
+| FIFA 4×4 | 5 | ✅ aucune équipe inconnue |
+| Penalty 18 | 3 | ✅ aucune équipe inconnue |
+| Penalty 22 | 4 | ✅ aucune équipe inconnue |
+
+`blocked: false` sur les trois. Panne d'API simulée → repli HTML sans plantage.
+Vérification complète : **83/83**.
+
+> ℹ️ **Piste écartée** : deviner la prochaine affiche depuis l'historique Telegram.
+> Mesuré sur les données réelles, le meilleur prédicteur n'atteint que 10 à 20 % de
+> réussite — mieux que le hasard, mais faux 4 fois sur 5. Inacceptable pour annoncer
+> un match. L'API fournit l'information exacte.

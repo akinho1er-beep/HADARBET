@@ -72,17 +72,86 @@ class OneXBetScraper {
     return page;
   }
 
-  _fetchHtml(url, redirects = 0) {
+  // Ouvre un tunnel CONNECT à travers le proxy (nécessaire pour le HTTPS).
+  // 1xBet bloque les IP d'hébergeur (Railway, AWS…) : sans proxy résidentiel,
+  // le serveur reçoit une page /block. Le proxy fait sortir la requête par une
+  // autre IP. Voir PROXY-1XBET.md.
+  _connectViaProxy(targetUrl) {
+    return new Promise((resolve, reject) => {
+      const p = new URL(this.proxyUrl);
+      const t = new URL(targetUrl);
+      const port = t.port || 443;
+      const headers = {};
+      if (p.username) {
+        const auth = Buffer.from(`${decodeURIComponent(p.username)}:${decodeURIComponent(p.password || '')}`).toString('base64');
+        headers['Proxy-Authorization'] = `Basic ${auth}`;
+      }
+      const req = http.request({
+        host: p.hostname,
+        port: p.port || 8080,
+        method: 'CONNECT',
+        path: `${t.hostname}:${port}`,
+        headers,
+        timeout: 20000
+      });
+      req.on('connect', (res, socket) => {
+        if (res.statusCode !== 200) {
+          socket.destroy();
+          return reject(new Error(`Proxy CONNECT a répondu ${res.statusCode}`));
+        }
+        resolve(socket);
+      });
+      req.on('timeout', () => req.destroy(new Error('Timeout proxy')));
+      req.on('error', reject);
+      req.end();
+    });
+  }
+
+  async _fetchHtml(url, redirects = 0) {
+    const HEADERS = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+      'Cache-Control': 'no-cache'
+    };
+
+    // ── Chemin proxy (PROXY_URL défini) ─────────────────────────────────────
+    if (this.proxyUrl && url.startsWith('https://')) {
+      const socket = await this._connectViaProxy(url);
+      return new Promise((resolve, reject) => {
+        const t = new URL(url);
+        const req = https.request({
+          host: t.hostname,
+          path: t.pathname + t.search,
+          method: 'GET',
+          socket,
+          agent: false,
+          servername: t.hostname,
+          timeout: 20000,
+          headers: HEADERS
+        }, res => {
+          const loc = res.headers.location;
+          if (res.statusCode >= 300 && res.statusCode < 400 && loc && redirects < 5) {
+            res.resume();
+            return resolve(this._fetchHtml(new URL(loc, url).toString(), redirects + 1));
+          }
+          let data = '';
+          res.setEncoding('utf8');
+          res.on('data', c => data += c);
+          res.on('end', () => resolve({ html: data, finalUrl: url, statusCode: res.statusCode }));
+        });
+        req.on('timeout', () => req.destroy(new Error('Timeout HTML bookmaker (proxy)')));
+        req.on('error', reject);
+        req.end();
+      });
+    }
+
+    // ── Chemin direct (inchangé) ────────────────────────────────────────────
     return new Promise((resolve, reject) => {
       const lib = url.startsWith('http://') ? http : https;
       const req = lib.get(url, {
         timeout: 20000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
-          'Cache-Control': 'no-cache'
-        }
+        headers: HEADERS
       }, res => {
         const loc = res.headers.location;
         if (res.statusCode >= 300 && res.statusCode < 400 && loc && redirects < 5) {
@@ -179,6 +248,18 @@ class OneXBetScraper {
     bookmaker = '1xbet';
     const urls = this._getUrlsForGame(game, 'upcoming', bookmaker);
     const allEvents = [];
+    // Mémorise si le bookmaker nous a servi sa page /block : le serveur en a
+    // besoin pour afficher « source inaccessible » plutôt que « aucun match ».
+    this.lastBlocked = false;
+
+    // 0) Voie prioritaire : API JSON (fonctionne depuis un hébergeur, contrairement
+    //    au scraping HTML que 1xBet bloque). Si elle répond, on s'arrête là.
+    try {
+      const viaApi = await this._fetchUpcomingApi(game, bookmaker);
+      if (viaApi.length) return viaApi;
+    } catch (e) {
+      console.warn(`⚠️ API JSON indisponible (${game}) : ${e.message} — repli sur le HTML`);
+    }
 
     // On essaie plusieurs URLs : line (à venir) puis live (en cours).
     // Les matchs déjà terminés sont filtrés par _statusFromStartDate.
@@ -191,6 +272,7 @@ class OneXBetScraper {
         const { html, finalUrl, statusCode } = await this._fetchHtml(targetUrl);
         if (/\/block(?:$|[?#/])/i.test(finalUrl) || /\/block(?:["'<\s]|$)/i.test(html)) {
           console.warn(`⚠️ 1xBet bloque l'accès calendrier (${game}) : ${finalUrl}`);
+          this.lastBlocked = true;
           continue;
         }
         events = this._parseJsonLdSportsEvents(html, game, bookmaker, targetUrl);
@@ -263,6 +345,123 @@ class OneXBetScraper {
     const base = this.baseUrls['1xbet'];
     // Une seule URL : la page live (contient matchs en cours + à venir)
     return [`${base}/fr/live/fifa/${slug}`];
+  }
+
+  // ── API JSON officielle (service-api) ───────────────────────────────────
+  // Le scraping HTML de /fr/live/ est bloqué depuis les IP d'hébergeur
+  // (Railway…) : 1xBet renvoie une page /block. En revanche l'endpoint
+  // service-api utilisé par leur propre application web répond normalement
+  // en JSON. On le privilégie ; le HTML reste en secours.
+  //
+  // LI = identifiant du championnat, identique aux slugs ci-dessus.
+  // L'API renvoie les noms complets (« Paris Saint-Germain »), alors que les
+  // canaux Telegram utilisent des formes courtes (« PSG »). Sans harmonisation,
+  // l'app ne relie pas la rencontre annoncée à l'historique de l'équipe et le
+  // pronostic reste vide. On aligne sur la convention Telegram.
+  _normEquipe(nom) {
+    const n = this._decodeHtml(nom || '').trim();
+    const MAP = {
+      'Paris Saint-Germain': 'PSG',
+      'Manchester City': 'Man City',
+      'Manchester United': 'Man United',
+      'Bayern Munich': 'Bayern',
+      'Bayern Munchen': 'Bayern',
+      'Real Madrid': 'Real Madrid',
+      'Sheffield United': 'Sheffield Utd',
+      'Brighton et Hove Albion': 'Brighton',
+      'Brighton & Hove Albion': 'Brighton',
+      'Brighton and Hove Albion': 'Brighton',
+      'Wolverhampton Wanderers': 'Wolves',
+      'Nottingham Forest': 'Nottm Forest',
+      'Newcastle United': 'Newcastle',
+      'West Ham United': 'West Ham',
+      'Tottenham Hotspur': 'Tottenham Hotspur',
+      'Luton Town': 'Luton Town',
+      'Crystal Palace': 'Crystal Palace',
+      'Aston Villa': 'Aston Villa',
+      'Piemonte Calcio': 'Piemonte Calcio (Juventus)',
+      'Piemonte Calcio (Juventus)': 'Piemonte Calcio (Juventus)'
+    };
+    return MAP[n] || n;
+  }
+
+  _championnat(game) {
+    return { fifa4x4: '2648573', penalty18: '1939256', penalty22: '2334988' }[game] || '';
+  }
+
+  _fetchJson(url) {
+    return new Promise((resolve, reject) => {
+      const run = (socket) => {
+        const t = new URL(url);
+        const req = https.request({
+          host: t.hostname,
+          path: t.pathname + t.search,
+          method: 'GET',
+          ...(socket ? { socket, agent: false, servername: t.hostname } : {}),
+          timeout: 20000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+            'Referer': `${this.baseUrls['1xbet']}/fr/live/fifa`
+          }
+        }, res => {
+          let data = '';
+          res.setEncoding('utf8');
+          res.on('data', c => data += c);
+          res.on('end', () => {
+            try { resolve(JSON.parse(data)); }
+            catch (_) { reject(new Error(`Réponse non-JSON (HTTP ${res.statusCode})`)); }
+          });
+        });
+        req.on('timeout', () => req.destroy(new Error('Timeout API bookmaker')));
+        req.on('error', reject);
+        req.end();
+      };
+      if (this.proxyUrl) this._connectViaProxy(url).then(run).catch(reject);
+      else run(null);
+    });
+  }
+
+  async _fetchUpcomingApi(game, bookmaker = '1xbet') {
+    const li = this._championnat(game);
+    if (!li) return [];
+    const base = this.baseUrls['1xbet'];
+    const out = [];
+    const vus = new Set();
+
+    // LiveFeed = en cours, LineFeed = à venir. sports=85 (jeux virtuels FIFA).
+    for (const feed of ['LiveFeed', 'LineFeed']) {
+      let json;
+      try {
+        json = await this._fetchJson(
+          `${base}/service-api/${feed}/Get1x2_VZip?sports=85&count=200&lng=fr&mode=4`
+        );
+      } catch (e) {
+        console.warn(`⚠️ API ${feed} indisponible (${game}) : ${e.message}`);
+        continue;
+      }
+      for (const e of (json && json.Value) || []) {
+        if (String(e.LI) !== li) continue;
+        const home = this._normEquipe(e.O1);
+        const away = this._normEquipe(e.O2);
+        if (!home || !away || home === away) continue;
+        const startDate = Number.isFinite(Number(e.S)) && Number(e.S) > 0
+          ? new Date(Number(e.S) * 1000).toISOString() : null;
+        const cle = `${e.I || ''}|${home}|${away}|${startDate || ''}`;
+        if (vus.has(cle)) continue;
+        vus.add(cle);
+        out.push({
+          officialId: String(e.I || e.CID || `${bookmaker}:${game}:${home}:${away}:${startDate || ''}`),
+          home, away, game, bookmaker,
+          startDate,
+          status: feed === 'LiveFeed' ? 'live' : this._statusFromStartDate(startDate),
+          source: 'service-api'
+        });
+      }
+    }
+    if (out.length) console.log(`✅ 1xbet ${game}: ${out.length} rencontre(s) via API JSON`);
+    return out;
   }
 
   // Rétro-compatibilité : ancien nom de méthode

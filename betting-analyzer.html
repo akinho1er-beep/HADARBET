@@ -7286,6 +7286,9 @@ async function fetchUpcomingAndUpdate(game, forceRefresh = false) {
     const fixtures = Array.isArray(payload) ? payload : (payload.fixtures || []);
     window.__bookmakerFixtures[game] = fixtures.map(f => normalizeClientFixture(f, game)).filter(Boolean);
     window.__bookmakerFixturesUpdatedAt[game] = payload.updatedAt || new Date().toISOString();
+    // Le serveur nous dit si le bookmaker l'a bloqué (voir /upcoming).
+    window.__bookmakerBlocked = window.__bookmakerBlocked || {};
+    window.__bookmakerBlocked[game] = !!payload.blocked;
     if (game === currentFixtureGame) renderFixtures();
     return window.__bookmakerFixtures[game];
   } catch (_) {
@@ -7318,7 +7321,18 @@ function renderFixtures() {
     const fx = detectUpcomingFixtures(currentFixtureGame);
     window.__lastFixtures = fx;
     if (!fx.length) {
-      auto.innerHTML = `<div class="empty-state"><div class="empty-icon">🗓️</div>Aucune rencontre à venir détectée pour le moment.</div>`;
+      // Distinguer « pas de match » (normal) de « flux bookmaker inaccessible »
+      // (1xBet bloque les IP d'hébergeur). Sans ça, l'utilisateur croit à tort
+      // qu'aucun match n'est programmé alors que la source est coupée.
+      const bloque = window.__bookmakerBlocked && window.__bookmakerBlocked[currentFixtureGame];
+      auto.innerHTML = bloque
+        ? `<div class="empty-state"><div class="empty-icon">🔌</div>
+             Le calendrier du bookmaker est momentanément inaccessible depuis le serveur.<br>
+             <span style="font-size:11px;display:block;margin-top:8px;opacity:.75">
+               Les résultats et les analyses ci-dessous restent à jour : ils proviennent des canaux, pas du bookmaker.
+             </span>
+           </div>`
+        : `<div class="empty-state"><div class="empty-icon">🗓️</div>Aucune rencontre à venir détectée pour le moment.</div>`;
     } else {
       auto.innerHTML = fx.map((f, i) => {
         const isLive = f.status === 'live';

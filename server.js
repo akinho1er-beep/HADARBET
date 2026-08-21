@@ -153,6 +153,10 @@ function adminMiddleware(req, res, next) {
 // des résultats ni par une rotation simulée. Uniquement scraper.fetchUpcoming().
 const upcomingFixtures = { fifa4x4: [], penalty18: [], penalty22: [] };
 const upcomingUpdatedAt = { fifa4x4: null, penalty18: null, penalty22: null };
+// true quand le bookmaker a renvoyé une page de blocage / une erreur réseau.
+// Permet à l'interface de dire « source inaccessible » au lieu de laisser
+// croire à tort qu'aucun match n'est programmé.
+const upcomingBlocked = { fifa4x4: false, penalty18: false, penalty22: false };
 let upcomingPollInProgress = false;
 
 function normalizeLimit(value, fallback = DEFAULT_RESULTS_LIMIT) {
@@ -709,6 +713,7 @@ async function updateUpcoming(game) {
   // Sur Railway (cloud), 1xBet bloque l'IP. On tente quand même au cas où,
   // mais on ne laisse pas Puppeteer tourner trop longtemps pour éviter les crashs mémoire.
   const collected = [];
+  let echecs = 0;
   for (const source of BOOKMAKER_SOURCES) {
     try {
       // Timeout de 10 secondes maximum pour éviter de bloquer le serveur
@@ -720,10 +725,14 @@ async function updateUpcoming(game) {
         timeoutPromise
       ]);
       rows.forEach(r => collected.push({ ...r, bookmaker: r.bookmaker || source }));
+      if (scraper.lastBlocked) echecs++;   // page /block servie par le bookmaker
     } catch (e) {
-      // Erreur silencieuse — 1xBet bloque ou timeout
+      echecs++;
+      // 1xBet bloque (page /block) ou timeout — on le signale à l'interface
     }
   }
+  // Bloqué = toutes les sources ont échoué ET rien n'a été récupéré.
+  upcomingBlocked[game] = (echecs === BOOKMAKER_SOURCES.length) && collected.length === 0;
   upcomingFixtures[game] = mergeUpcomingFixtures(game, collected);
   upcomingUpdatedAt[game] = new Date().toISOString();
   console.log(`🗓️ [${game}] ${upcomingFixtures[game].length} rencontre(s) bookmaker détectée(s).`);
@@ -896,6 +905,7 @@ app.get('/upcoming/:game', async (req, res) => {
     game,
     updatedAt: upcomingUpdatedAt[game],
     sources: BOOKMAKER_SOURCES,
+    blocked: !!upcomingBlocked[game],
     fixtures: upcomingFixtures[game] || []
   });
 });

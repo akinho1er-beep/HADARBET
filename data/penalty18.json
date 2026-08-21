@@ -1,5 +1,357 @@
 [
   {
+    "n": 162,
+    "home": "Bayern",
+    "away": "Juventus",
+    "score": "4:5",
+    "ts": 1787318748000,
+    "msgId": 756567
+  },
+  {
+    "n": 161,
+    "home": "Liverpool",
+    "away": "Barcelone",
+    "score": "2:1",
+    "ts": 1787318442000,
+    "msgId": 756566
+  },
+  {
+    "n": 160,
+    "home": "Barcelone",
+    "away": "Man City",
+    "score": "2:3",
+    "ts": 1787318179000,
+    "msgId": 756565
+  },
+  {
+    "n": 159,
+    "home": "PSG",
+    "away": "Arsenal",
+    "score": "3:0",
+    "ts": 1787317831000,
+    "msgId": 756564
+  },
+  {
+    "n": 158,
+    "home": "Liverpool",
+    "away": "Man City",
+    "score": "1:3",
+    "ts": 1787317531000,
+    "msgId": 756563
+  },
+  {
+    "n": 157,
+    "home": "Juventus",
+    "away": "Bayern",
+    "score": "1:3",
+    "ts": 1787317286000,
+    "msgId": 756562
+  },
+  {
+    "n": 156,
+    "home": "Real Madrid",
+    "away": "PSG",
+    "score": "5:4",
+    "ts": 1787316931000,
+    "msgId": 756561
+  },
+  {
+    "n": 155,
+    "home": "Arsenal",
+    "away": "Bayern",
+    "score": "4:3",
+    "ts": 1787316625000,
+    "msgId": 756560
+  },
+  {
+    "n": 154,
+    "home": "Juventus",
+    "away": "PSG",
+    "score": "1:3",
+    "ts": 1787316344000,
+    "msgId": 756559
+  },
+  {
+    "n": 153,
+    "home": "Bayern",
+    "away": "PSG",
+    "score": "2:3",
+    "ts": 1787316020000,
+    "msgId": 756557
+  },
+  {
+    "n": 152,
+    "home": "Bayern",
+    "away": "Real Madrid",
+    "score": "1:2",
+    "ts": 1787315746000,
+    "msgId": 756556
+  },
+  {
+    "n": 151,
+    "home": "Liverpool",
+    "away": "Real Madrid",
+    "score": "1:2",
+    "ts": 1787315471000,
+    "msgId": 756555
+  },
+  {
+    "n": 150,
+    "home": "Man City",
+    "away": "Barcelone",
+    "score": "3:1",
+    "ts": 1787315129000,
+    "msgId": 756554
+  },
+  {
+    "n": 149,
+    "home": "Barcelone",
+    "away": "Man City",
+    "score": "1:3",
+    "ts": 1787314897000,
+    "msgId": 756552
+  },
+  {
+    "n": 148,
+    "home": "PSG",
+    "away": "Barcelone",
+    "score": "3:2",
+    "ts": 1787314548000,
+    "msgId": 756551
+  },
+  {
+    "n": 147,
+    "home": "Bayern",
+    "away": "Real Madrid",
+    "score": "1:3",
+    "ts": 1787314230000,
+    "msgId": 756550
+  },
+  {
+    "n": 146,
+    "home": "Barcelone",
+    "away": "Man City",
+    "score": "2:3",
+    "ts": 1787313949000,
+    "msgId": 756549
+  },
+  {
+    "n": 144,
+    "home": "Man City",
+    "away": "Juventus",
+    "score": "3:2",
+    "ts": 1787313356000,
+    "msgId": 756548
+  },
+  {
+    "n": 143,
+    "home": "Man City",
+    "away": "Juventus",
+    "score": "4:1",
+    "ts": 1787313026000,
+    "msgId": 756547
+  },
+  {
+    "n": 142,
+    "home": "PSG",
+    "away": "Arsenal",
+    "score": "2:3",
+    "ts": 1787312726000,
+    "msgId": 756546
+  },
+  {
+    "n": 141,
+    "home": "Bayern",
+    "away": "Real Madrid",
+    "score": "3:1",
+    "ts": 1787312463000,
+    "msgId": 756545
+  },
+  {
+    "n": 7,
+    "home": "Man City",
+    "away": "Juventus",
+    "score": "3:1",
+    "ts": 1787272229000,
+    "msgId": 756421
+  },
+  {
+    "n": 6,
+    "home": "Man City",
+    "away": "Juventus",
+    "score": "3:4",
+    "ts": 1787271923000,
+    "msgId": 756420
+  },
+  {
+    "n": 5,
+    "home": "Man City",
+    "away": "Juventus",
+    "score": "1:2",
+    "ts": 1787271624000,
+    "msgId": 756419
+  },
+  {
+    "n": 4,
+    "home": "Juventus",
+    "away": "Arsenal",
+    "score": "3:1",
+    "ts": 1787271325000,
+    "msgId": 756418
+  },
+  {
+    "n": 3,
+    "home": "Barcelone",
+    "away": "Liverpool",
+    "score": "1:0",
+    "ts": 1787271032000,
+    "msgId": 756417
+  },
+  {
+    "n": 2,
+    "home": "Barcelone",
+    "away": "Liverpool",
+    "score": "1:3",
+    "ts": 1787270727000,
+    "msgId": 756416
+  },
+  {
+    "n": 1,
+    "home": "Barcelone",
+    "away": "Liverpool",
+    "score": "3:2",
+    "ts": 1787270470000,
+    "msgId": 756415
+  },
+  {
+    "n": 288,
+    "home": "Liverpool",
+    "away": "Barcelone",
+    "score": "3:0",
+    "ts": 1787270129000,
+    "msgId": 756414
+  },
+  {
+    "n": 287,
+    "home": "Arsenal",
+    "away": "Bayern",
+    "score": "4:3",
+    "ts": 1787269830000,
+    "msgId": 756413
+  },
+  {
+    "n": 286,
+    "home": "PSG",
+    "away": "Barcelone",
+    "score": "2:3",
+    "ts": 1787269549000,
+    "msgId": 756412
+  },
+  {
+    "n": 285,
+    "home": "Real Madrid",
+    "away": "PSG",
+    "score": "1:2",
+    "ts": 1787269275000,
+    "msgId": 756411
+  },
+  {
+    "n": 284,
+    "home": "Barcelone",
+    "away": "PSG",
+    "score": "1:3",
+    "ts": 1787268970000,
+    "msgId": 756410
+  },
+  {
+    "n": 283,
+    "home": "Man City",
+    "away": "Juventus",
+    "score": "1:2",
+    "ts": 1787268672000,
+    "msgId": 756409
+  },
+  {
+    "n": 282,
+    "home": "Arsenal",
+    "away": "Bayern",
+    "score": "1:3",
+    "ts": 1787268397000,
+    "msgId": 756408
+  },
+  {
+    "n": 281,
+    "home": "Bayern",
+    "away": "Real Madrid",
+    "score": "1:2",
+    "ts": 1787268026000,
+    "msgId": 756407
+  },
+  {
+    "n": 280,
+    "home": "Man City",
+    "away": "Juventus",
+    "score": "2:3",
+    "ts": 1787267732000,
+    "msgId": 756406
+  },
+  {
+    "n": 279,
+    "home": "Juventus",
+    "away": "Bayern",
+    "score": "2:3",
+    "ts": 1787267446000,
+    "msgId": 756405
+  },
+  {
+    "n": 278,
+    "home": "Man City",
+    "away": "Juventus",
+    "score": "1:3",
+    "ts": 1787267141000,
+    "msgId": 756404
+  },
+  {
+    "n": 277,
+    "home": "PSG",
+    "away": "Barcelone",
+    "score": "3:1",
+    "ts": 1787266860000,
+    "msgId": 756403
+  },
+  {
+    "n": 276,
+    "home": "Real Madrid",
+    "away": "PSG",
+    "score": "5:4",
+    "ts": 1787266531000,
+    "msgId": 756402
+  },
+  {
+    "n": 275,
+    "home": "Barcelone",
+    "away": "Liverpool",
+    "score": "4:2",
+    "ts": 1787266225000,
+    "msgId": 756401
+  },
+  {
+    "n": 274,
+    "home": "Bayern",
+    "away": "Real Madrid",
+    "score": "2:3",
+    "ts": 1787265944000,
+    "msgId": 756400
+  },
+  {
+    "n": 273,
+    "home": "PSG",
+    "away": "Arsenal",
+    "score": "2:3",
+    "ts": 1787265627000,
+    "msgId": 756399
+  },
+  {
     "n": 272,
     "home": "Bayern",
     "away": "Real Madrid",
