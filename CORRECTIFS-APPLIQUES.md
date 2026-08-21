@@ -227,3 +227,71 @@ Vérification complète : **83/83**.
 > Mesuré sur les données réelles, le meilleur prédicteur n'atteint que 10 à 20 % de
 > réussite — mieux que le hasard, mais faux 4 fois sur 5. Inacceptable pour annoncer
 > un match. L'API fournit l'information exacte.
+
+---
+
+## 18. 🔴 Scores toujours du type 2-1 / 3-2 — CORRIGÉ
+
+**Signalé par l'utilisateur** : les scores proposés (2-1, 1-2, 3-2, 2-3) ne
+reflétaient pas l'historique. **Observation exacte, et la cause est structurelle.**
+
+**Cause 1 — des plafonds inventés, codés en dur.**
+
+```js
+const caps = { penalty18: { home: 3, away: 2 }, penalty22: { home: 4, away: 3 } };
+```
+
+Ces bornes ne venaient d'aucune mesure. Conséquence chiffrée sur les données
+réelles :
+
+| jeu | matchs couverts par les plafonds | scores rendus IMPOSSIBLES |
+|---|---|---|
+| penalty18 | 44,2 % | **55,8 %** |
+| penalty22 | 76,2 % | **23,8 %** |
+
+Le score le plus fréquent en penalty18 est **2:3 (14,8 %)** — un score que
+l'ancien code ne pouvait littéralement jamais proposer (extérieur plafonné à 2).
+D'où la répétition perpétuelle de 2-1 / 3-2.
+
+**Cause 2 — la loi de Poisson est inadaptée aux penalties.**
+Le moteur H2H tirait le score exact d'un modèle de Poisson. Vérification :
+
+| jeu | variance / moyenne (Poisson exige ≈ 1) | P(0 but) Poisson | P(0 but) réel |
+|---|---|---|---|
+| penalty18 | **0,50** | 6,5 % | **0,0 %** |
+| penalty22 | **0,49** | 5,7 % | **0,0 %** |
+| fifa4x4 | 0,90 | 0,1 % | 0,1 % |
+
+Poisson attribuait 6,5 % de chances à un score à 0 but alors que les tirs au but
+garantissent des buts. Inadapté pour les penalties, acceptable pour FIFA 4×4.
+
+**Correctif — `hpScoreProbable()`, une seule source de vérité.**
+Distribution réellement observée : on retient l'issue majoritaire, puis le score
+le plus fréquent **cohérent avec cette issue** (un pronostic « victoire domicile »
+ne peut plus afficher un score de défaite). Aucun plafond. Les nuls sont exclus
+pour les penalties (0,18 % et 0,00 % observés), conservés en FIFA 4×4 (9,2 %).
+
+**Résultat sur les données réelles :**
+
+| jeu | avant | après | moyenne de buts réelle |
+|---|---|---|---|
+| penalty18 | 2-1 / 3-2 | **3:2** (21 % de son issue) | 2,73 – 2,54 |
+| penalty22 | 2-1 / 3-2 | **3:1** (16 %) | 2,86 – 2,71 |
+| fifa4x4 | 9-8 (plafond) | **6:8** (6 %) | 6,97 – 6,90 |
+
+**Justesse mesurée** (backtest walk-forward, 2229 / 2231 / 2130 matchs) :
+
+| jeu | score exact | top 3 | bonne issue | hasard (exact) |
+|---|---|---|---|---|
+| penalty18 | 9,8 % | 27,7 % | 54,2 % | 3,6 % |
+| penalty22 | 8,2 % | 25,0 % | 53,3 % | 4,0 % |
+| fifa4x4 | 2,0 % | 6,1 % | 44,8 % | 0,6 % |
+
+**Honnêteté d'affichage.** « Score probable » devient **« Score le + fréquent »**
+suivi de son pourcentage réel. Un score exact ne tombe qu'environ 1 fois sur 10 :
+l'utilisateur doit le voir. L'issue (54 %) reste le signal exploitable, pas le
+score exact.
+
+> ⚠️ **Ce correctif rend les scores réalistes, pas prévisibles.** Les 5 jeux
+> restent statistiquement indépendants (cf. §Backtest) : aucun score exact n'est
+> prédictible de façon rentable. Le gain est la fin d'un artefact trompeur.

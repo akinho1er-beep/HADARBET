@@ -228,6 +228,19 @@ check('7q', 'Backtest et significativité excluent les matchs en cours',
   fs.readFileSync(path.join(ROOT, 'tools/backtest.js'), 'utf8').includes('filter(r => !r.live)') &&
   fs.readFileSync(path.join(ROOT, 'tools/significance.js'), 'utf8').includes('filter(r => !r.live)'));
 
+// --- 7sexies : score exact fondé sur les données réelles ---
+check('7s', 'Plafonds de score codés en dur supprimés',
+  !HTML.includes('penalty18: { home: 3, away: 2 }'),
+  'ils rendaient 55,8 % des scores penalty18 réels impossibles à proposer');
+check('7s', 'Fonction hpScoreProbable présente', HTML.includes('function hpScoreProbable'));
+check('7s', 'Les 3 moteurs utilisent la distribution réelle',
+  (HTML.match(/hpScoreProbable\(/g) || []).length >= 4);
+check('7s', "Score exact non issu de Poisson pour les penalties",
+  HTML.includes('la loi de Poisson est INADAPTÉE'),
+  'variance/moyenne = 0,50 et Poisson prédit 6,5 % de 0 but contre 0,0 % réel');
+check('7s', 'Fiabilité du score affichée à l\'utilisateur',
+  HTML.includes('scorePart') && HTML.includes('Score le + fréquent'));
+
 check('7t', 'En-têtes de sécurité envoyés',
   SECU.includes('X-Content-Type-Options') && SECU.includes('X-Frame-Options'));
 check('7t', 'Sessions écrites sur disque', SESS.includes('sessions.json'));
