@@ -1,5 +1,157 @@
 [
   {
+    "n": 985,
+    "player": 25,
+    "dealer": 14,
+    "result": "LOSE",
+    "ts": 1787329447000,
+    "msgId": 2275008
+  },
+  {
+    "n": 984,
+    "player": 20,
+    "dealer": 24,
+    "result": "WIN",
+    "ts": 1787329387000,
+    "msgId": 2275007
+  },
+  {
+    "n": 983,
+    "player": 23,
+    "dealer": 12,
+    "result": "LOSE",
+    "ts": 1787329325000,
+    "msgId": 2275006
+  },
+  {
+    "n": 982,
+    "player": 23,
+    "dealer": 9,
+    "result": "LOSE",
+    "ts": 1787329263000,
+    "msgId": 2275005
+  },
+  {
+    "n": 981,
+    "player": 24,
+    "dealer": 10,
+    "result": "LOSE",
+    "ts": 1787329206000,
+    "msgId": 2275004
+  },
+  {
+    "n": 980,
+    "player": 24,
+    "dealer": 15,
+    "result": "LOSE",
+    "ts": 1787329147000,
+    "msgId": 2275003
+  },
+  {
+    "n": 979,
+    "player": 24,
+    "dealer": 12,
+    "result": "LOSE",
+    "ts": 1787329090000,
+    "msgId": 2275002
+  },
+  {
+    "n": 978,
+    "player": 25,
+    "dealer": 9,
+    "result": "LOSE",
+    "ts": 1787329023000,
+    "msgId": 2275001
+  },
+  {
+    "n": 977,
+    "player": 19,
+    "dealer": 19,
+    "result": "PUSH",
+    "ts": 1787328966000,
+    "msgId": 2275000
+  },
+  {
+    "n": 976,
+    "player": 19,
+    "dealer": 27,
+    "result": "WIN",
+    "ts": 1787328904000,
+    "msgId": 2274999
+  },
+  {
+    "n": 975,
+    "player": 22,
+    "dealer": 11,
+    "result": "LOSE",
+    "ts": 1787328847000,
+    "msgId": 2274998
+  },
+  {
+    "n": 974,
+    "player": 21,
+    "dealer": 12,
+    "result": "WIN",
+    "ts": 1787328785000,
+    "msgId": 2274997
+  },
+  {
+    "n": 973,
+    "player": 19,
+    "dealer": 21,
+    "result": "LOSE",
+    "ts": 1787328728000,
+    "msgId": 2274996
+  },
+  {
+    "n": 972,
+    "player": 21,
+    "dealer": 24,
+    "result": "WIN",
+    "ts": 1787328669000,
+    "msgId": 2274995
+  },
+  {
+    "n": 971,
+    "player": 22,
+    "dealer": 16,
+    "result": "LOSE",
+    "ts": 1787328612000,
+    "msgId": 2274994
+  },
+  {
+    "n": 970,
+    "player": 25,
+    "dealer": 16,
+    "result": "LOSE",
+    "ts": 1787328545000,
+    "msgId": 2274993
+  },
+  {
+    "n": 969,
+    "player": 28,
+    "dealer": 9,
+    "result": "LOSE",
+    "ts": 1787328488000,
+    "msgId": 2274992
+  },
+  {
+    "n": 968,
+    "player": 23,
+    "dealer": 11,
+    "result": "LOSE",
+    "ts": 1787328426000,
+    "msgId": 2274991
+  },
+  {
+    "n": 967,
+    "player": 21,
+    "dealer": 22,
+    "result": "WIN",
+    "ts": 1787328363000,
+    "msgId": 2274990
+  },
+  {
     "n": 886,
     "player": 21,
     "dealer": 30,

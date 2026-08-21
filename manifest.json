@@ -6,12 +6,12 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#03050e",
-  "theme_color": "#00e5a0",
+  "theme_color": "#d94f6e",
   "scope": "/",
   "categories": ["sports", "finance", "utilities"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2300ff9d'/%3E%3Cstop offset='0.5' stop-color='%2300e5ff'/%3E%3Cstop offset='1' stop-color='%237b5ea7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='100' fill='%2302040a'/%3E%3Ccircle cx='256' cy='256' r='160' fill='none' stroke='url(%23g)' stroke-width='8'/%3E%3Ccircle cx='256' cy='256' r='110' fill='url(%23g)'/%3E%3Cg fill='%23fff'%3E%3Crect x='196' y='170' width='24' height='172' rx='12'/%3E%3Crect x='292' y='170' width='24' height='172' rx='12'/%3E%3Crect x='186' y='242' width='120' height='28'/%3E%3C/g%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23d94f6e'/%3E%3Cstop offset='0.5' stop-color='%238c2444'/%3E%3Cstop offset='1' stop-color='%23ffd24a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='100' fill='%2302040a'/%3E%3Ccircle cx='256' cy='256' r='160' fill='none' stroke='url(%23g)' stroke-width='8'/%3E%3Ccircle cx='256' cy='256' r='110' fill='url(%23g)'/%3E%3Cg fill='%23fff'%3E%3Crect x='196' y='170' width='24' height='172' rx='12'/%3E%3Crect x='292' y='170' width='24' height='172' rx='12'/%3E%3Crect x='186' y='242' width='120' height='28'/%3E%3C/g%3E%3C/svg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

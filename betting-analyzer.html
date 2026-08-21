@@ -6,7 +6,7 @@
 <title>HADAR BetAnalytics Pro</title>
 <!-- PWA Mobile App -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#00e5a0">
+<meta name="theme-color" content="#d94f6e">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -24,64 +24,76 @@
    VARIABLES
 ══════════════════════════════════════════ */
 :root {
-  /* ══ TRICHROME HADAR — palette alignée sur le logo ══════════════
-     Vert émeraude #00E5A0 → Cyan #00D4FF → Violet #7B5EA7.
-     Les trois teintes du logo sont désormais exploitées ; auparavant
-     seul le vert servait. Fonds légèrement bleutés/violacés pour que
-     le cyan et le violet ressortent sans écraser le vert. */
+  /* ══ BORDEAUX & OR — palette alignée sur le logo bordeaux ═══════
+     Bordeaux #8C2444 (structure) → framboise #D94F6E (accent lisible)
+     → or #FFD24A (gains, éléments premium).
+
+     🔴 Contrainte mesurée : le bordeaux pur n'atteint que 2,38 de
+     contraste sur fond noir (norme AA = 4,5) — illisible en texte.
+     Il sert donc aux fonds, bordures et dégradés ; la framboise
+     (5,13) porte les textes et les chiffres. */
   --bg:          #03050e;
-  --bg2:         #070c1c;
-  --surface:     rgba(11, 18, 36, 0.74);
-  --surface2:    rgba(17, 26, 50, 0.86);
-  --surface3:    rgba(24, 36, 68, 0.9);
-  --border:      rgba(0, 212, 255, 0.16);
+  --bg2:         #0c0510;
+  --surface:     rgba(26, 12, 20, 0.76);
+  --surface2:    rgba(38, 17, 28, 0.86);
+  --surface3:    rgba(52, 24, 38, 0.9);
+  --border:      rgba(217, 79, 110, 0.18);
   --border2:     rgba(255, 255, 255, 0.06);
-  --card:        rgba(12, 20, 40, 0.72);
-  --glass:       rgba(9, 15, 30, 0.62);
-  --glass-border:rgba(0, 212, 255, 0.14);
+  --card:        rgba(24, 11, 18, 0.74);
+  --glass:       rgba(18, 8, 14, 0.64);
+  --glass-border:rgba(217, 79, 110, 0.16);
 
-  /* ══ ACCENTS — les 3 couleurs du logo ══ */
-  --accent:      #00e5a0;
-  --accent-rgb:  0, 229, 160;
-  --accent-deep: #00a877;
-  --accent-2:    #00d4ff;
-  --accent2:     #00d4ff;
-  --accent2-rgb: 0, 212, 255;
-  --accent3:     #9d7bd4;
-  --accent3-rgb: 157, 123, 212;
-  --violet:      #7b5ea7;
-  --violet-rgb:  123, 94, 167;
+  /* ══ ACCENTS ══
+     --accent = framboise : c'est la variable utilisée partout dans
+     l'app pour les textes et valeurs, elle DOIT rester lisible. */
+  --accent:      #d94f6e;
+  --accent-rgb:  217, 79, 110;
+  --accent-deep: #8c2444;
+  --accent-2:    #e5738f;
+  --accent2:     #e5738f;
+  --accent2-rgb: 229, 115, 143;
+  --accent3:     #ffd24a;
+  --accent3-rgb: 255, 210, 74;
+  --bordeaux:    #8c2444;
+  --bordeaux-rgb:140, 36, 68;
+  --bordeaux-deep:#5a1730;
 
-  /* ══ DÉGRADÉS DE MARQUE (réutilisables partout) ══ */
-  --grad-brand:  linear-gradient(90deg, #00e5a0 0%, #00d4ff 55%, #9d7bd4 100%);
-  --grad-brand-135: linear-gradient(135deg, #00e5a0 0%, #00d4ff 55%, #9d7bd4 100%);
-  --grad-soft:   linear-gradient(135deg, rgba(0,229,160,.14), rgba(0,212,255,.10), rgba(123,94,167,.16));
+  /* ══ DÉGRADÉS DE MARQUE ══ */
+  --grad-brand:  linear-gradient(90deg, #d94f6e 0%, #8c2444 55%, #ffd24a 100%);
+  --grad-brand-135: linear-gradient(135deg, #d94f6e 0%, #8c2444 55%, #ffd24a 100%);
+  --grad-soft:   linear-gradient(135deg, rgba(217,79,110,.16), rgba(140,36,68,.12), rgba(255,210,74,.12));
 
-  /* ══ LUXE GOLD — touches premium ══ */
+  /* ══ OR — gains et indicateurs positifs ══
+     Vous avez choisi l'or plutôt que le vert pour les gains.
+     Contraste 14,12 : excellent, et 2,43× plus lumineux que le rouge
+     de perte — les deux restent distinguables au premier coup d'œil. */
   --gold:        #ffd24a;
   --gold-deep:   #d99a00;
-  --gold-glow:   rgba(255, 210, 74, 0.35);
+  --gold-glow:   rgba(255, 210, 74, 0.4);
+  --win:         #ffd24a;
+  --positive:    #ffd24a;
 
-  /* ══ STATUS ══ */
-  --red:         #ff3860;
-  --danger:      #ff3860;
+  /* ══ STATUS ══
+     Le rouge de perte est volontairement plus vif et plus froid que
+     le bordeaux de la charte, pour ne pas s'y confondre. */
+  --red:         #ff5252;
+  --danger:      #ff5252;
+  --loss:        #ff5252;
 
   /* ══ TEXTES ══ */
-  --text:        #d6efe9;
+  --text:        #f0e2e6;
   --text-bright: #ffffff;
-  --muted:       #5b7b8c;
+  --muted:       #9b7d88;
 
-  /* ══ GLOWS & OMBRES ══
-     Halos renforcés (choix « effets plus marqués »), mais en box-shadow
-     statiques : contrairement aux filtres animés, ils ne coûtent presque
-     rien à la batterie sur mobile. */
-  --glow:        0 0 44px rgba(0, 229, 160, 0.34), 0 0 90px rgba(0, 212, 255, 0.14);
-  --glow-cyan:   0 0 36px rgba(0, 212, 255, 0.38);
-  --glow-violet: 0 0 36px rgba(123, 94, 167, 0.42);
-  --glow-gold:   0 0 30px rgba(255, 210, 74, 0.4);
-  --shadow-deep: 0 20px 60px rgba(0, 0, 0, 0.82), 0 0 1px rgba(0, 212, 255, 0.24);
-  --shadow-cyber:0 10px 36px rgba(0, 0, 0, 0.62), 0 0 26px rgba(0, 229, 160, 0.10), inset 0 1px 0 rgba(0, 212, 255, 0.08);
+  /* ══ GLOWS & OMBRES (halos renforcés, coût batterie nul) ══ */
+  --glow:        0 0 44px rgba(217, 79, 110, 0.34), 0 0 90px rgba(140, 36, 68, 0.20);
+  --glow-cyan:   0 0 36px rgba(229, 115, 143, 0.38);
+  --glow-violet: 0 0 36px rgba(255, 210, 74, 0.30);
+  --glow-gold:   0 0 32px rgba(255, 210, 74, 0.45);
+  --shadow-deep: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 1px rgba(217, 79, 110, 0.26);
+  --shadow-cyber:0 10px 36px rgba(0, 0, 0, 0.66), 0 0 26px rgba(217, 79, 110, 0.12), inset 0 1px 0 rgba(255, 210, 74, 0.07);
 }
+
 
 
 /* Le mode jour devient un "mode terminal clair" discret */
@@ -130,7 +142,7 @@ body.day-mode {
 html { scroll-behavior: smooth; }
 body {
   background:
-    radial-gradient(ellipse 70% 50% at 50% -5%, rgba(0, 255, 157, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% -5%, rgba(217,79,110, 0.08) 0%, transparent 55%),
     radial-gradient(ellipse 50% 40% at 85% 90%, rgba(255, 210, 74, 0.04) 0%, transparent 50%),
     radial-gradient(ellipse 60% 50% at 10% 80%, rgba(0, 229, 255, 0.05) 0%, transparent 55%),
     var(--bg);
@@ -151,8 +163,8 @@ body::after {
     0deg,
     transparent 0,
     transparent 2px,
-    rgba(0, 255, 157, 0.012) 3px,
-    rgba(0, 255, 157, 0.012) 3px
+    rgba(217,79,110, 0.012) 3px,
+    rgba(217,79,110, 0.012) 3px
   );
   mix-blend-mode: overlay;
 }
@@ -174,7 +186,7 @@ body::after {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,229,160,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(217,79,110,0.12) 0%, transparent 70%),
     radial-gradient(ellipse 60% 40% at 90% 50%, rgba(123,94,167,0.10) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
@@ -199,7 +211,7 @@ body::after {
   width: 280px;
   max-width: 80vw;
   margin-bottom: 8px;
-  filter: drop-shadow(0 0 24px rgba(0,229,160,0.2));
+  filter: drop-shadow(0 0 24px rgba(217,79,110,0.2));
 }
 .landing-logo-name {
   font-size: 13px; font-weight: 600;
@@ -220,7 +232,7 @@ body::after {
 /* Promo card */
 .promo-card {
   background: linear-gradient(135deg, #12082a 0%, #0a1930 100%);
-  border: 1px solid rgba(0,229,160,0.25);
+  border: 1px solid rgba(217,79,110,0.25);
   border-radius: 20px;
   padding: 28px 24px;
   margin-bottom: 16px;
@@ -289,10 +301,10 @@ body::after {
 }
 .bookie-item:hover {
   border-color: var(--accent);
-  background: rgba(0,229,160,0.08);
+  background: rgba(217,79,110,0.08);
   color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,229,160,0.15);
+  box-shadow: 0 4px 12px rgba(217,79,110,0.15);
 }
 
 /* Login card */
@@ -338,7 +350,7 @@ body::after {
 }
 .form-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0,229,160,0.1);
+  box-shadow: 0 0 0 3px rgba(217,79,110,0.1);
 }
 .form-input::placeholder { color: var(--muted); }
 .form-error {
@@ -405,8 +417,8 @@ body::after {
 }
 .contact-link.telegram:hover { border-color: #0088cc; }
 .contact-link.hadar {
-  background: rgba(0,229,160,0.08);
-  border-color: rgba(0,229,160,0.2);
+  background: rgba(217,79,110,0.08);
+  border-color: rgba(217,79,110,0.2);
 }
 .contact-link.hadar:hover { border-color: var(--accent); }
 .contact-link-avatar {
@@ -417,7 +429,7 @@ body::after {
   flex-shrink: 0;
 }
 .contact-link.telegram .contact-link-avatar { background: rgba(0,136,204,0.2); }
-.contact-link.hadar .contact-link-avatar { background: rgba(0,229,160,0.15); }
+.contact-link.hadar .contact-link-avatar { background: rgba(217,79,110,0.15); }
 .contact-link-name { font-weight: 600; font-size: 13px; }
 .contact-link-role { font-size: 11px; color: var(--muted); margin-top: 1px; }
 .contact-link-arrow { margin-left: auto; color: var(--muted); font-size: 16px; }
@@ -506,7 +518,7 @@ body::after {
   display: none;
   font-weight: 500;
 }
-.admin-msg.success { background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.3); color: var(--accent); }
+.admin-msg.success { background: rgba(217,79,110,0.12); border: 1px solid rgba(217,79,110,0.3); color: var(--accent); }
 .admin-msg.error { background: rgba(255,77,109,0.12); border: 1px solid rgba(255,77,109,0.3); color: var(--red); }
 
 .btn-secondary {
@@ -546,7 +558,7 @@ body::after {
   cursor: pointer;
   transition: all 0.2s;
 }
-.btn-accent:hover { background: rgba(0,229,160,0.2); }
+.btn-accent:hover { background: rgba(217,79,110,0.2); }
 
 /* Search bar */
 .search-bar {
@@ -621,7 +633,7 @@ body.day-mode .sub-row { background: rgba(0,0,0,0.025); }
   border-radius: 6px;
   letter-spacing: 0.3px;
 }
-.remain-pill.ok       { background: rgba(0,229,160,0.12); color: var(--accent); border: 1px solid rgba(0,229,160,0.25); }
+.remain-pill.ok       { background: rgba(217,79,110,0.12); color: var(--accent); border: 1px solid rgba(217,79,110,0.25); }
 .remain-pill.warn     { background: rgba(245,166,35,0.12); color: var(--gold); border: 1px solid rgba(245,166,35,0.3); }
 .remain-pill.critical { background: rgba(255,140,90,0.15); color: #ff8c5a; border: 1px solid rgba(255,140,90,0.3); animation: pulse-warn 1.6s ease-in-out infinite; }
 .remain-pill.expired  { background: rgba(255,77,109,0.12); color: var(--red); border: 1px solid rgba(255,77,109,0.3); }
@@ -664,7 +676,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
 .extend-radio input { margin-top: 3px; accent-color: var(--accent); }
 .extend-radio:has(input:checked) {
   border-color: var(--accent);
-  background: rgba(0,229,160,0.06);
+  background: rgba(217,79,110,0.06);
 }
 .extend-radio-title {
   font-size: 13px;
@@ -706,7 +718,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
   text-transform: uppercase;
 }
 .badge-admin { background: rgba(245,166,35,0.15); color: var(--gold); border: 1px solid rgba(245,166,35,0.3); }
-.badge-active { background: rgba(0,229,160,0.12); color: var(--accent); border: 1px solid rgba(0,229,160,0.25); }
+.badge-active { background: rgba(217,79,110,0.12); color: var(--accent); border: 1px solid rgba(217,79,110,0.25); }
 .badge-inactive { background: rgba(255,77,109,0.1); color: var(--red); border: 1px solid rgba(255,77,109,0.2); }
 .user-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
@@ -769,7 +781,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
   width: auto;
   border-radius: 6px;
   object-fit: contain;
-  filter: drop-shadow(0 0 8px rgba(0,229,160,0.3));
+  filter: drop-shadow(0 0 8px rgba(217,79,110,0.3));
 }
 .header-right { display: flex; align-items: center; gap: 8px; }
 
@@ -796,8 +808,8 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
 
 .user-pill {
   display: flex; align-items: center; gap: 6px;
-  background: rgba(0,229,160,0.08);
-  border: 1px solid rgba(0,229,160,0.25);
+  background: rgba(217,79,110,0.08);
+  border: 1px solid rgba(217,79,110,0.25);
   border-radius: 20px;
   padding: 5px 12px;
   font-size: 12px; font-weight: 700;
@@ -805,7 +817,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
   cursor: pointer;
   transition: all 0.2s;
 }
-.user-pill:hover { background: rgba(0,229,160,0.15); }
+.user-pill:hover { background: rgba(217,79,110,0.15); }
 
 .menu-btn {
   background: none; border: none;
@@ -866,7 +878,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
   font-family: 'Space Grotesk', sans-serif;
 }
 .game-btn.active, .game-btn:hover {
-  background: rgba(0,229,160,0.1);
+  background: rgba(217,79,110,0.1);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -889,7 +901,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
   to { opacity: 1; transform: translateY(0); }
 }
 .result-card:hover { border-color: var(--surface3); }
-.result-card.new { border-color: var(--accent); background: rgba(0,229,160,0.04); }
+.result-card.new { border-color: var(--accent); background: rgba(217,79,110,0.04); }
 .result-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); min-width: 60px; }
 .match-teams { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: center; }
 .team-name { font-size: 13px; font-weight: 700; text-align: center; min-width: 80px; }
@@ -902,11 +914,11 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
   font-size: 16px; font-weight: 700;
   letter-spacing: 2px;
 }
-.score-box.win { color: var(--accent); border-color: rgba(0,229,160,0.3); }
+.score-box.win { color: var(--gold); border-color: rgba(255,210,74,0.35); }
 .score-box.lose { color: var(--red); border-color: rgba(255,77,109,0.3); }
 .score-box.draw { color: var(--gold); border-color: rgba(245,166,35,0.3); }
 .winner-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; min-width: 80px; text-align: center; }
-.winner-badge.home { background: rgba(0,229,160,0.12); color: var(--accent); }
+.winner-badge.home { background: rgba(217,79,110,0.12); color: var(--accent); }
 .winner-badge.away { background: rgba(123,94,167,0.18); color: #b09dd0; }
 .winner-badge.draw { background: rgba(245,166,35,0.12); color: var(--gold); }
 
@@ -937,7 +949,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
 .j21-bust-badge { font-size: 10px; font-weight: 700; color: var(--red); background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 5px; padding: 1px 7px; margin-top: 2px; }
 .j21-21-badge { font-size: 10px; font-weight: 700; color: var(--gold); background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3); border-radius: 5px; padding: 1px 7px; margin-top: 2px; }
 .j21-result-badge { font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 8px; text-align: center; flex-shrink: 0; }
-.j21-result-badge.win { background: rgba(0,229,160,0.12); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+.j21-result-badge.win { background: rgba(255,210,74,0.12); color: var(--gold); border: 1px solid rgba(255,210,74,0.35); }
 .j21-result-badge.lose { background: rgba(255,77,109,0.12); color: var(--red); border: 1px solid rgba(255,77,109,0.3); }
 .j21-result-badge.push { background: rgba(245,166,35,0.12); color: var(--gold); border: 1px solid rgba(245,166,35,0.3); }
 @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.6} }
@@ -954,8 +966,8 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
 .bac-kpi-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; }
 .bac-seq-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
 .bac-seq-dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; flex-shrink: 0; }
-.bac-seq-dot.P { background: rgba(0,229,160,0.18); color: var(--accent); border: 1.5px solid var(--accent); }
-.bac-seq-dot.B { background: rgba(123,94,167,0.18); color: #b09dd0; border: 1.5px solid #7b5ea7; }
+.bac-seq-dot.P { background: rgba(217,79,110,0.18); color: var(--accent); border: 1.5px solid var(--accent); }
+.bac-seq-dot.B { background: rgba(123,94,167,0.18); color: #b09dd0; border: 1.5px solid #ffd24a; }
 .bac-seq-dot.T { background: rgba(245,166,35,0.15); color: var(--gold); border: 1.5px solid var(--gold); }
 .bac-seq-dot.N { outline: 2px solid var(--gold); outline-offset: 1px; }
 .bac-diamond-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
@@ -964,7 +976,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
 .bac-diamond-bar { flex: 1; height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
 .bac-diamond-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #e63946, #ff6b6b); transition: width 0.8s ease; }
 .bac-diamond-pct { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--muted); min-width: 36px; text-align: right; }
-.bac-prediction-box { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; background: linear-gradient(135deg, rgba(0,229,160,0.03), rgba(123,94,167,0.03)); }
+.bac-prediction-box { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; background: linear-gradient(135deg, rgba(217,79,110,0.03), rgba(123,94,167,0.03)); }
 .bac-pred-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .bac-pred-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
 .bac-pred-conf { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; }
@@ -972,10 +984,10 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
 .bac-pred-reason { font-size: 11px; color: var(--muted); line-height: 1.6; }
 .bac-next-games { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .bac-game-chip { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-.bac-game-chip.hot { background: rgba(0,229,160,0.1); color: var(--accent); border-color: rgba(0,229,160,0.25); }
+.bac-game-chip.hot { background: rgba(217,79,110,0.1); color: var(--accent); border-color: rgba(217,79,110,0.25); }
 .bac-game-chip.warn { background: rgba(245,166,35,0.1); color: var(--gold); border-color: rgba(245,166,35,0.25); }
 .bac-game-chip.diam { background: rgba(230,57,70,0.1); color: #ff6b6b; border-color: rgba(230,57,70,0.25); }
-.bac-reco-box { border: 2px solid var(--accent); border-radius: 14px; padding: 18px; background: rgba(0,229,160,0.05); }
+.bac-reco-box { border: 2px solid var(--accent); border-radius: 14px; padding: 18px; background: rgba(217,79,110,0.05); }
 .bac-reco-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 8px; }
 .bac-reco-main { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
 .bac-reco-detail { font-size: 12px; color: var(--muted); line-height: 1.6; }
@@ -998,8 +1010,8 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
 .prono-title { font-size: 20px; font-weight: 800; }
 .ai-badge {
   display: flex; align-items: center; gap: 6px;
-  background: linear-gradient(135deg, rgba(0,229,160,0.12), rgba(123,94,167,0.12));
-  border: 1px solid rgba(0,229,160,0.25);
+  background: linear-gradient(135deg, rgba(217,79,110,0.12), rgba(123,94,167,0.12));
+  border: 1px solid rgba(217,79,110,0.25);
   color: var(--accent);
   padding: 5px 12px;
   border-radius: 20px;
@@ -1049,7 +1061,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
 .prono-reasoning { font-size: 12px; color: var(--muted); line-height: 1.6; }
 .prono-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .prono-tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; }
-.tag-trend { background: rgba(0,229,160,0.1); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+.tag-trend { background: rgba(217,79,110,0.1); color: var(--accent); border: 1px solid rgba(217,79,110,0.2); }
 .tag-caution { background: rgba(245,166,35,0.1); color: var(--gold); border: 1px solid rgba(245,166,35,0.2); }
 .tag-streak { background: rgba(123,94,167,0.15); color: #b09dd0; border: 1px solid rgba(123,94,167,0.25); }
 
@@ -1059,7 +1071,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
 .hadar-card {
   position: relative;
   background:
-    radial-gradient(ellipse 90% 60% at 0% 0%, rgba(0,229,160,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 90% 60% at 0% 0%, rgba(217,79,110,0.10) 0%, transparent 60%),
     radial-gradient(ellipse 80% 60% at 100% 100%, rgba(123,94,167,0.12) 0%, transparent 60%),
     var(--card);
   border: 2px solid transparent;
@@ -1069,7 +1081,7 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
   margin-bottom: 16px;
   overflow: hidden;
   animation: slideIn 0.35s ease;
-  box-shadow: 0 6px 24px rgba(0,229,160,0.06), 0 2px 8px rgba(0,0,0,0.25);
+  box-shadow: 0 6px 24px rgba(217,79,110,0.06), 0 2px 8px rgba(0,0,0,0.25);
 }
 .hadar-card::before {
   content: '';
@@ -1109,9 +1121,9 @@ body.day-mode .sub-bar { background: rgba(0,0,0,0.06); }
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px; font-weight: 700;
   padding: 5px 11px; border-radius: 8px;
-  background: rgba(0,229,160,0.10);
+  background: rgba(217,79,110,0.10);
   color: var(--accent);
-  border: 1px solid rgba(0,229,160,0.25);
+  border: 1px solid rgba(217,79,110,0.25);
 }
 .hadar-grid {
   display: grid;
@@ -1200,9 +1212,9 @@ body.day-mode .hadar-analysis { background: rgba(0,0,0,0.04); }
   border: 1px solid var(--border);
 }
 .hadar-next-chip.primary {
-  background: linear-gradient(135deg, rgba(0,229,160,0.15), rgba(123,94,167,0.15));
+  background: linear-gradient(135deg, rgba(217,79,110,0.15), rgba(123,94,167,0.15));
   color: var(--accent);
-  border-color: rgba(0,229,160,0.35);
+  border-color: rgba(217,79,110,0.35);
 }
 .hadar-footer {
   margin-top: 12px;
@@ -1247,7 +1259,7 @@ body.day-mode .hadar-analysis { background: rgba(0,0,0,0.04); }
 }
 .section-title::after {
   content: ''; flex: 1; height: 2px; border-radius: 2px;
-  background: linear-gradient(90deg, rgba(0,229,160,.55), rgba(0,212,255,.3), rgba(123,94,167,.12), transparent);
+  background: linear-gradient(90deg, rgba(217,79,110,.55), rgba(0,212,255,.3), rgba(123,94,167,.12), transparent);
 }
 
 /* Empty state */
@@ -1301,7 +1313,7 @@ body.day-mode .hadar-analysis { background: rgba(0,0,0,0.04); }
   white-space: nowrap;
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
-.toast.success { border-color: rgba(0,229,160,0.4); color: var(--accent); }
+.toast.success { border-color: rgba(217,79,110,0.4); color: var(--accent); }
 .toast.error { border-color: rgba(255,77,109,0.4); color: var(--red); }
 .toast.warning { border-color: rgba(245,166,35,0.4); color: var(--gold); }
 
@@ -1340,8 +1352,8 @@ body.day-mode .hadar-analysis { background: rgba(0,0,0,0.04); }
 .splash-grid {
   position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(0,229,160,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,160,0.05) 1px, transparent 1px);
+    linear-gradient(rgba(217,79,110,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,79,110,0.05) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 0%, transparent 80%);
   -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 0%, transparent 80%);
@@ -1355,7 +1367,7 @@ body.day-mode .hadar-analysis { background: rgba(0,0,0,0.04); }
 .splash-glow {
   position: absolute; inset: 0;
   background:
-    radial-gradient(circle 600px at 50% 50%, rgba(0,229,160,0.18), transparent 60%),
+    radial-gradient(circle 600px at 50% 50%, rgba(217,79,110,0.18), transparent 60%),
     radial-gradient(circle 400px at 30% 70%, rgba(123,94,167,0.15), transparent 60%),
     radial-gradient(circle 350px at 70% 30%, rgba(0,212,255,0.12), transparent 60%);
   filter: blur(20px);
@@ -1379,7 +1391,7 @@ body.day-mode .hadar-analysis { background: rgba(0,0,0,0.04); }
   border-radius: 50%;
   border: 2px solid transparent;
   border-top-color: var(--accent);
-  border-right-color: rgba(0,229,160,0.3);
+  border-right-color: rgba(217,79,110,0.3);
   animation: splash-spin 2.4s linear infinite;
 }
 .splash-logo-ring::after {
@@ -1397,13 +1409,13 @@ body.day-mode .hadar-analysis { background: rgba(0,0,0,0.04); }
   display: flex; align-items: center; justify-content: center;
   font-size: 38px;
   box-shadow:
-    0 0 40px rgba(0,229,160,0.6),
+    0 0 40px rgba(217,79,110,0.6),
     inset 0 0 20px rgba(255,255,255,0.2);
   animation: splash-pulse 1.8s ease-in-out infinite;
 }
 @keyframes splash-pulse {
-  0%, 100% { transform: scale(1);    box-shadow: 0 0 40px rgba(0,229,160,0.6), inset 0 0 20px rgba(255,255,255,0.2); }
-  50%      { transform: scale(1.06); box-shadow: 0 0 60px rgba(0,229,160,0.9), inset 0 0 30px rgba(255,255,255,0.3); }
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 40px rgba(217,79,110,0.6), inset 0 0 20px rgba(255,255,255,0.2); }
+  50%      { transform: scale(1.06); box-shadow: 0 0 60px rgba(217,79,110,0.9), inset 0 0 30px rgba(255,255,255,0.3); }
 }
 
 .splash-brand {
@@ -1420,7 +1432,7 @@ body.day-mode .hadar-analysis { background: rgba(0,0,0,0.04); }
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 10px;
-  filter: drop-shadow(0 0 20px rgba(0,229,160,0.4));
+  filter: drop-shadow(0 0 20px rgba(217,79,110,0.4));
   animation: splash-fade-in 1s ease-out;
 }
 .splash-brand .tagline {
@@ -1465,8 +1477,8 @@ body.day-mode .hadar-analysis { background: rgba(0,0,0,0.04); }
 .splash-step.active {
   opacity: 1; transform: translateX(0);
   color: var(--accent);
-  border-color: rgba(0,229,160,0.3);
-  background: rgba(0,229,160,0.05);
+  border-color: rgba(217,79,110,0.3);
+  background: rgba(217,79,110,0.05);
 }
 .splash-step.done {
   opacity: 0.5; transform: translateX(0);
@@ -1535,8 +1547,8 @@ body.day-mode #neural-bg { opacity: 0.2; }
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(0, 255, 157, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 157, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(217,79,110, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,79,110, 0.04) 1px, transparent 1px);
   background-size: 50px 50px;
   mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 10%, transparent 80%);
   -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 10%, transparent 80%);
@@ -1602,7 +1614,7 @@ body.day-mode .ambient-orbs::after { opacity: 0.18; }
 }
 .card-3d:hover {
   transform: translateY(-4px) perspective(1000px) rotateX(2deg);
-  box-shadow: var(--shadow-deep), 0 0 0 1px rgba(0,229,160,0.15);
+  box-shadow: var(--shadow-deep), 0 0 0 1px rgba(217,79,110,0.15);
 }
 .card-3d::before {
   content: '';
@@ -1610,7 +1622,7 @@ body.day-mode .ambient-orbs::after { opacity: 0.18; }
   border-radius: inherit;
   background: radial-gradient(
     circle 300px at var(--mx, 50%) var(--my, 50%),
-    rgba(0,229,160,0.10) 0%,
+    rgba(217,79,110,0.10) 0%,
     transparent 60%
   );
   opacity: 0;
@@ -1625,7 +1637,7 @@ body.day-mode .ambient-orbs::after { opacity: 0.18; }
 }
 .prono-card:hover, .history-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,229,160,0.12);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(217,79,110,0.12);
 }
 
 /* Bouton générique premium (réutilisable) */
@@ -1635,8 +1647,8 @@ body.day-mode .ambient-orbs::after { opacity: 0.18; }
   gap: 10px;
   padding: 14px 28px;
   border-radius: 12px;
-  border: 1px solid rgba(0,229,160,0.3);
-  background: linear-gradient(135deg, rgba(0,229,160,0.12), rgba(123,94,167,0.12));
+  border: 1px solid rgba(217,79,110,0.3);
+  background: linear-gradient(135deg, rgba(217,79,110,0.12), rgba(123,94,167,0.12));
   color: var(--text);
   font-family: 'Inter', sans-serif;
   font-size: 13px;
@@ -1656,7 +1668,7 @@ body.day-mode .ambient-orbs::after { opacity: 0.18; }
 }
 .btn-premium:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0,229,160,0.3), 0 0 0 1px rgba(0,229,160,0.5);
+  box-shadow: 0 12px 32px rgba(217,79,110,0.3), 0 0 0 1px rgba(217,79,110,0.5);
 }
 .btn-premium:hover::before { transform: translateX(100%); }
 
@@ -1684,7 +1696,7 @@ body.day-mode .ambient-orbs::after { opacity: 0.18; }
   padding: 24px 26px;
   margin-bottom: 18px;
   background:
-    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(0,229,160,0.15), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(217,79,110,0.15), transparent 60%),
     radial-gradient(ellipse 60% 50% at 0% 100%, rgba(123,94,167,0.15), transparent 60%),
     linear-gradient(135deg, rgba(15,21,34,0.85), rgba(10,14,26,0.85));
   border: 1px solid var(--glass-border);
@@ -1694,7 +1706,7 @@ body.day-mode .ambient-orbs::after { opacity: 0.18; }
 }
 body.day-mode .dashboard-hero {
   background:
-    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(0,229,160,0.10), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(217,79,110,0.10), transparent 60%),
     radial-gradient(ellipse 60% 50% at 0% 100%, rgba(123,94,167,0.10), transparent 60%),
     linear-gradient(135deg, rgba(255,255,255,0.95), rgba(245,247,252,0.95));
 }
@@ -1702,8 +1714,8 @@ body.day-mode .dashboard-hero {
   content: '';
   position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(0,229,160,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,160,0.04) 1px, transparent 1px);
+    linear-gradient(rgba(217,79,110,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,79,110,0.04) 1px, transparent 1px);
   background-size: 24px 24px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent);
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent);
@@ -1789,8 +1801,8 @@ body.day-mode .dashboard-hero {
 }
 .kpi-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(0,229,160,0.3);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,229,160,0.2);
+  border-color: rgba(217,79,110,0.3);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(217,79,110,0.2);
 }
 .kpi-card::after {
   content: '';
@@ -1805,8 +1817,8 @@ body.day-mode .dashboard-hero {
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-size: 18px;
-  background: linear-gradient(135deg, rgba(0,229,160,0.15), rgba(123,94,167,0.15));
-  border: 1px solid rgba(0,229,160,0.2);
+  background: linear-gradient(135deg, rgba(217,79,110,0.15), rgba(123,94,167,0.15));
+  border: 1px solid rgba(217,79,110,0.2);
   margin-bottom: 10px;
 }
 .kpi-label {
@@ -1880,9 +1892,9 @@ body.day-mode .dashboard-hero {
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 6px;
-  background: rgba(0,229,160,0.08);
+  background: rgba(217,79,110,0.08);
   color: var(--accent);
-  border: 1px solid rgba(0,229,160,0.2);
+  border: 1px solid rgba(217,79,110,0.2);
   letter-spacing: 0.8px;
   text-transform: uppercase;
 }
@@ -1911,7 +1923,7 @@ body.day-mode .dashboard-hero {
   transition: all 0.25s ease;
 }
 .alert-item:hover {
-  border-color: rgba(0,229,160,0.3);
+  border-color: rgba(217,79,110,0.3);
   transform: translateX(4px);
 }
 .alert-item .pulse {
@@ -1961,8 +1973,8 @@ body.day-mode .dashboard-hero {
 }
 .live-pred-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(0,229,160,0.4);
-  box-shadow: 0 12px 32px rgba(0,229,160,0.15);
+  border-color: rgba(217,79,110,0.4);
+  box-shadow: 0 12px 32px rgba(217,79,110,0.15);
 }
 .live-pred-game {
   font-size: 10px;
@@ -1994,10 +2006,10 @@ body.day-mode .dashboard-hero {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   color: var(--accent);
-  background: rgba(0,229,160,0.08);
+  background: rgba(217,79,110,0.08);
   padding: 3px 8px;
   border-radius: 6px;
-  border: 1px solid rgba(0,229,160,0.2);
+  border: 1px solid rgba(217,79,110,0.2);
 }
 
 /* Section titles dashboard */
@@ -2049,7 +2061,7 @@ body.day-mode .app-tabs {
   height: 3px;
   background: var(--grad-brand);
   border-radius: 3px;
-  box-shadow: 0 0 16px rgba(0,229,160,.6), 0 0 28px rgba(0,212,255,.32);
+  box-shadow: 0 0 16px rgba(217,79,110,.6), 0 0 28px rgba(0,212,255,.32);
 }
 
 /* ══════════════════════════════════════════
@@ -2060,7 +2072,7 @@ body.day-mode .app-tabs {
 }
 .landing-bg {
   background:
-    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,229,160,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(217,79,110,0.18) 0%, transparent 70%),
     radial-gradient(ellipse 60% 40% at 90% 50%, rgba(123,94,167,0.14) 0%, transparent 60%),
     radial-gradient(ellipse 50% 40% at 10% 90%, rgba(0,212,255,0.10) 0%, transparent 60%) !important;
 }
@@ -2068,8 +2080,8 @@ body.day-mode .app-tabs {
   content: '';
   position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(217,79,110,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,79,110,0.03) 1px, transparent 1px);
   background-size: 40px 40px;
   mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);
   -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);
@@ -2087,7 +2099,7 @@ body.day-mode .app-tabs {
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(0,229,160,0.3), rgba(123,94,167,0.3));
+  background: linear-gradient(180deg, rgba(217,79,110,0.3), rgba(123,94,167,0.3));
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -2143,8 +2155,8 @@ body.day-mode .app-tabs {
   background: var(--grad-brand); opacity: .9; pointer-events: none;
 }
 .fixture-card.live-fixture {
-  border-color: rgba(0, 229, 160, .38);
-  box-shadow: 0 10px 36px rgba(0,0,0,.6), 0 0 30px rgba(0,229,160,.16);
+  border-color: rgba(217,79,110, .38);
+  box-shadow: 0 10px 36px rgba(0,0,0,.6), 0 0 30px rgba(217,79,110,.16);
 }
 .fixture-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .fixture-tag {
@@ -2156,12 +2168,12 @@ body.day-mode .app-tabs {
 .fixture-versus { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 12px; }
 .fixture-team { font-size: 14px; font-weight: 800; flex: 1; text-align: center; line-height: 1.3; }
 .fixture-team.home { color: var(--accent); }
-.fixture-team.away { color: var(--accent3); }
+.fixture-team.away { color: #e8c9d2; }   /* rose pâle : l'or reste réservé aux GAINS */
 .fixture-vs { font-size: 11px; color: var(--muted); font-weight: 800; }
 .ft-badge {
   display: inline-block; font-size: 8px; font-weight: 800; padding: 1px 5px;
   border-radius: 4px; margin-right: 5px; vertical-align: middle;
-  background: rgba(0,229,160,.15); color: var(--accent); letter-spacing: .5px;
+  background: rgba(217,79,110,.15); color: var(--accent); letter-spacing: .5px;
 }
 .ft-badge.ext { background: rgba(123,94,167,.18); color: #b09dd0; }
 .fixture-actions { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -2181,7 +2193,7 @@ body.day-mode .app-tabs {
 .h2h-card {
   border: 2px solid var(--accent); border-radius: 16px; padding: 20px; margin-bottom: 18px;
   animation: slideIn .3s ease;
-  background: linear-gradient(135deg, rgba(0,229,160,.05), rgba(123,94,167,.05)), var(--card);
+  background: linear-gradient(135deg, rgba(217,79,110,.05), rgba(123,94,167,.05)), var(--card);
 }
 .h2h-title { font-size: 13px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
 .h2h-teams { display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 17px; font-weight: 800; margin-bottom: 14px; flex-wrap: wrap; }
@@ -2246,7 +2258,7 @@ body.day-mode .h2h-meta { background: rgba(0,0,0,.04); }
 }
 .aviator-mult.low  { color: #ff4d6d; background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); }
 .aviator-mult.mid  { color: var(--gold); background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3); }
-.aviator-mult.high { color: var(--accent); background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.35); box-shadow: 0 0 16px rgba(0,229,160,0.25); }
+.aviator-mult.high { color: var(--accent); background: rgba(217,79,110,0.12); border: 1px solid rgba(217,79,110,0.35); box-shadow: 0 0 16px rgba(217,79,110,0.25); }
 .aviator-tag {
   font-size: 10px; font-weight: 800;
   padding: 4px 10px; border-radius: 6px;
@@ -2255,7 +2267,7 @@ body.day-mode .h2h-meta { background: rgba(0,0,0,.04); }
 }
 .aviator-tag.low  { background: rgba(255,77,109,0.12); color: #ff4d6d; }
 .aviator-tag.mid  { background: rgba(245,166,35,0.12); color: var(--gold); }
-.aviator-tag.high { background: rgba(0,229,160,0.12); color: var(--accent); }
+.aviator-tag.high { background: rgba(217,79,110,0.12); color: var(--accent); }
 
 /* Bandeau promo Aviator */
 .aviator-promo {
@@ -2344,7 +2356,7 @@ body.day-mode .h2h-meta { background: rgba(0,0,0,.04); }
 }
 .aviator-histo-dot.low  { background: rgba(255,77,109,0.12); color: #ff4d6d; border: 1px solid rgba(255,77,109,0.25); }
 .aviator-histo-dot.mid  { background: rgba(245,166,35,0.12); color: var(--gold); border: 1px solid rgba(245,166,35,0.25); }
-.aviator-histo-dot.high { background: rgba(0,229,160,0.12); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+.aviator-histo-dot.high { background: rgba(217,79,110,0.12); color: var(--accent); border: 1px solid rgba(217,79,110,0.3); }
 
 /* ══════════════════════════════════════════
    ONGLET PERFORMANCE — backtest réel
@@ -2366,28 +2378,28 @@ body.day-mode .h2h-meta { background: rgba(0,0,0,.04); }
 .perf-pill{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.22);color:#7fdcff;
   border-radius:20px;padding:3px 10px;font-size:10.5px;font-family:'JetBrains Mono',ui-monospace,monospace}
 .perf-badge{font-size:11.5px;padding:8px 12px;border-radius:9px;margin-bottom:10px;line-height:1.55}
-.perf-badge.ok{background:rgba(0,255,157,.08);border:1px solid rgba(0,255,157,.26);color:var(--accent)}
+.perf-badge.ok{background:rgba(217,79,110,.08);border:1px solid rgba(217,79,110,.26);color:var(--accent)}
 .perf-badge.warn{background:rgba(245,166,35,.09);border:1px solid rgba(245,166,35,.3);color:var(--gold)}
 .perf-verdict{font-size:12.5px;padding:11px 14px;border-radius:10px;margin-bottom:12px;line-height:1.65}
 .perf-verdict.bad{background:rgba(255,77,109,.08);border-left:3px solid #ff4d6d;color:#ffc4ce}
-.perf-verdict.ok{background:rgba(0,255,157,.06);border-left:3px solid var(--accent);color:#b6ffe2}
+.perf-verdict.ok{background:rgba(217,79,110,.06);border-left:3px solid var(--accent);color:#b6ffe2}
 .perf-verdict strong{color:var(--text)}
 table.perf-t{width:100%;border-collapse:collapse;font-size:12px}
 table.perf-t th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);
   padding:6px 8px;border-bottom:1px solid var(--border2);font-weight:600}
 table.perf-t td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
 table.perf-t .num{text-align:right;font-family:'JetBrains Mono',ui-monospace,monospace}
-table.perf-t tr.best td{background:rgba(0,255,157,.05)}
+table.perf-t tr.best td{background:rgba(217,79,110,.05)}
 table.perf-t tr.bad td{background:rgba(255,77,109,.05)}
 table.perf-t.sm{font-size:11px;margin-top:8px}
 .perf-chip{display:inline-block;font-size:8.5px;text-transform:uppercase;letter-spacing:.6px;
   padding:2px 6px;border-radius:5px;margin-left:5px;vertical-align:middle;font-weight:700}
-.perf-chip.ok{background:rgba(0,255,157,.16);color:var(--accent)}
+.perf-chip.ok{background:rgba(217,79,110,.16);color:var(--accent)}
 .perf-chip.old{background:rgba(255,77,109,.16);color:#ff8fa3}
 .perf-chip.ref{background:rgba(255,255,255,.08);color:var(--muted)}
 .perf-bw{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:7px}
 .perf-bb{height:14px;border-radius:4px;background:rgba(125,141,166,.26);flex-shrink:1}
-.perf-bb.best{background:linear-gradient(90deg,rgba(0,255,157,.35),rgba(0,255,157,.6))}
+.perf-bb.best{background:linear-gradient(90deg,rgba(217,79,110,.35),rgba(217,79,110,.6))}
 .perf-bb.bad{background:linear-gradient(90deg,rgba(255,77,109,.3),rgba(255,77,109,.55))}
 .perf-bw span{min-width:48px;text-align:right}
 table.perf-t .warn{color:var(--gold)}
@@ -2396,7 +2408,7 @@ table.perf-t .okc{color:var(--accent)}
 .perf-det summary{cursor:pointer;font-size:11.5px;color:#7fdcff;user-select:none}
 .perf-note{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:12px;
   padding:15px 17px;margin-top:18px;font-size:12px;color:var(--muted);line-height:1.7}
-.perf-note h3{color:#00d4ff;font-size:13px;margin:0 0 8px}
+.perf-note h3{color:#e5738f;font-size:13px;margin:0 0 8px}
 .perf-note strong{color:var(--text)}
 .perf-note ul{margin:8px 0 0 18px;padding:0}
 .perf-note li{margin-bottom:5px}
@@ -2414,25 +2426,25 @@ table.perf-t .okc{color:var(--accent)}
   <defs>
     <!-- Gradients du logo -->
     <linearGradient id="hadar-grad-core" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%"  stop-color="#00e5a0"/>
-      <stop offset="50%" stop-color="#00d4ff"/>
-      <stop offset="100%" stop-color="#7b5ea7"/>
+      <stop offset="0%"  stop-color="#d94f6e"/>
+      <stop offset="55%" stop-color="#8c2444"/>
+      <stop offset="100%" stop-color="#5a1730"/>
     </linearGradient>
     <linearGradient id="hadar-grad-h" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%"  stop-color="#ffffff"/>
-      <stop offset="60%" stop-color="#d6fff0"/>
-      <stop offset="100%" stop-color="#a8eee0"/>
+      <stop offset="60%" stop-color="#fff2f5"/>
+      <stop offset="100%" stop-color="#ffe0e8"/>
     </linearGradient>
     <radialGradient id="hadar-grad-glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%"  stop-color="#00e5a0" stop-opacity="0.55"/>
-      <stop offset="60%" stop-color="#00e5a0" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#00e5a0" stop-opacity="0"/>
+      <stop offset="0%"  stop-color="#d94f6e" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#d94f6e" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#d94f6e" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="hadar-grad-ring" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%"   stop-color="#00e5a0" stop-opacity="0"/>
-      <stop offset="40%"  stop-color="#00e5a0"/>
-      <stop offset="75%"  stop-color="#00d4ff"/>
-      <stop offset="100%" stop-color="#7b5ea7" stop-opacity="0"/>
+      <stop offset="0%"   stop-color="#d94f6e" stop-opacity="0"/>
+      <stop offset="40%"  stop-color="#d94f6e"/>
+      <stop offset="75%"  stop-color="#e5738f"/>
+      <stop offset="100%" stop-color="#ffd24a" stop-opacity="0"/>
     </linearGradient>
   </defs>
 
@@ -2445,14 +2457,14 @@ table.perf-t .okc{color:var(--accent)}
     <g class="hadar-ring-outer">
       <circle cx="50" cy="50" r="44" fill="none" stroke="url(#hadar-grad-ring)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="120 200"/>
       <!-- 3 ticks répartis -->
-      <circle cx="50" cy="6"  r="2.4" fill="#00e5a0"/>
-      <circle cx="88" cy="72" r="1.8" fill="#00d4ff"/>
-      <circle cx="12" cy="72" r="1.8" fill="#7b5ea7"/>
+      <circle cx="50" cy="6"  r="2.4" fill="#d94f6e"/>
+      <circle cx="88" cy="72" r="1.8" fill="#e5738f"/>
+      <circle cx="12" cy="72" r="1.8" fill="#ffd24a"/>
     </g>
 
     <!-- Anneau moyen (rotation inverse, + rapide) avec ticks radar -->
     <g class="hadar-ring-mid">
-      <circle cx="50" cy="50" r="37" fill="none" stroke="rgba(0,229,160,0.25)" stroke-width="1" stroke-dasharray="2 6"/>
+      <circle cx="50" cy="50" r="37" fill="none" stroke="rgba(217,79,110,0.25)" stroke-width="1" stroke-dasharray="2 6"/>
     </g>
 
     <!-- Core : disque avec gradient -->
@@ -2469,7 +2481,7 @@ table.perf-t .okc{color:var(--accent)}
       <!-- Barre horizontale (légèrement plus large, style aile) -->
       <path d="M36 47 L64 47 L64 53 L36 53 Z"/>
       <!-- Accent central (point lumineux) -->
-      <circle cx="50" cy="50" r="2.2" fill="#00e5a0"/>
+      <circle cx="50" cy="50" r="2.2" fill="#d94f6e"/>
     </g>
   </symbol>
 </svg>
@@ -2510,8 +2522,8 @@ table.perf-t .okc{color:var(--accent)}
   animation: hadar-core-breathe 3.4s ease-in-out infinite;
 }
 @keyframes hadar-core-breathe {
-  0%, 100% { filter: drop-shadow(0 0 2px rgba(0,229,160,0.6)); }
-  50%      { filter: drop-shadow(0 0 8px rgba(0,229,160,0.95)); }
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(217,79,110,0.6)); }
+  50%      { filter: drop-shadow(0 0 8px rgba(217,79,110,0.95)); }
 }
 
 /* Variante compacte (header app, favicon) — animations plus discrètes */
@@ -2533,13 +2545,13 @@ table.perf-t .okc{color:var(--accent)}
   font-family: 'Inter', sans-serif;
   font-weight: 900;
   letter-spacing: 6px;
-  background: linear-gradient(110deg, #ffffff 10%, #00e5a0 45%, #00d4ff 70%, #7b5ea7 100%);
+  background: linear-gradient(110deg, #ffffff 10%, #d94f6e 45%, #e5738f 70%, #ffd24a 100%);
   background-size: 220% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: hadar-wordmark-shimmer 6s ease-in-out infinite;
-  filter: drop-shadow(0 0 14px rgba(0,229,160,0.28));
+  filter: drop-shadow(0 0 14px rgba(217,79,110,0.28));
 }
 @keyframes hadar-wordmark-shimmer {
   0%, 100% { background-position: 0% 50%; }
@@ -2600,7 +2612,7 @@ body, .app-content, .modal-box, .admin-inner, .landing-inner {
 .btn-primary, .analyze-btn, .btn-aviator {
   background: linear-gradient(135deg, var(--accent-deep), var(--accent)) !important;
   border: 1px solid var(--accent) !important;
-  color: #00120a !important;
+  color: #fff2f5 !important;
   font-weight: 800 !important;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -2612,7 +2624,7 @@ body, .app-content, .modal-box, .admin-inner, .landing-inner {
 }
 
 .btn-secondary {
-  background: rgba(0, 255, 157, 0.05) !important;
+  background: rgba(217,79,110, 0.05) !important;
   border: 1px solid var(--border) !important;
   color: var(--text) !important;
   text-transform: uppercase;
@@ -2682,7 +2694,7 @@ body, .app-content, .modal-box, .admin-inner, .landing-inner {
 
 /* ══ HEADER APP : barre néon avec ligne lumineuse basse ══ */
 .app-header {
-  background: rgba(2, 6, 14, 0.85) !important;
+  background: rgba(5, 3, 8, 0.85) !important;
   border-bottom: none !important;
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
@@ -2703,7 +2715,7 @@ body, .app-content, .modal-box, .admin-inner, .landing-inner {
 
 /* ══ TABS : style terminal cyber ══ */
 .app-tabs {
-  background: rgba(2, 6, 14, 0.7) !important;
+  background: rgba(5, 3, 8, 0.7) !important;
   border-bottom: none !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -2755,7 +2767,7 @@ body, .app-content, .modal-box, .admin-inner, .landing-inner {
   background:
     radial-gradient(ellipse 60% 40% at 100% 0%, rgba(var(--accent-rgb), 0.1), transparent 60%),
     radial-gradient(ellipse 50% 40% at 0% 100%, rgba(255, 210, 74, 0.06), transparent 60%),
-    linear-gradient(135deg, rgba(8, 16, 30, 0.9), rgba(4, 8, 18, 0.9)) !important;
+    linear-gradient(135deg, rgba(26, 12, 20, 0.9), rgba(12, 5, 16, 0.9)) !important;
   border: 1px solid var(--border) !important;
   box-shadow: var(--shadow-cyber) !important;
 }
@@ -2874,7 +2886,7 @@ body, .app-content, .modal-box, .admin-inner, .landing-inner {
 
 /* ══ ADMIN ══ */
 #admin-panel { background: var(--bg) !important; }
-.admin-header { background: rgba(2, 6, 14, 0.9) !important; border-bottom: 1px solid var(--border) !important; }
+.admin-header { background: rgba(5, 3, 8, 0.9) !important; border-bottom: 1px solid var(--border) !important; }
 .admin-title { color: var(--accent) !important; text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3); }
 
 /* ══ PRONO TAGS ══ */
@@ -3339,7 +3351,7 @@ body.day-mode .sub-row { background: rgba(0, 130, 90, 0.03) !important; }
       </div>
     </div>
 
-    <div style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.25);padding:12px 14px;border-radius:8px;margin-bottom:14px;font-size:12px;line-height:1.7">
+    <div style="background:rgba(217,79,110,0.08);border:1px solid rgba(217,79,110,0.25);padding:12px 14px;border-radius:8px;margin-bottom:14px;font-size:12px;line-height:1.7">
       <div id="extend-preview"></div>
     </div>
 
@@ -3524,7 +3536,7 @@ body.day-mode .sub-row { background: rgba(0, 130, 90, 0.03) !important; }
       </div>
 
       <!-- MEMBRE SUBSCRIPTION WIDGET -->
-      <div id="member-subscription-widget" class="dashboard-hero card-3d" style="display:none; margin-bottom: 18px; padding: 20px 24px; background: radial-gradient(ellipse 70% 50% at 100% 0%, rgba(0, 229, 160, 0.08), transparent 60%), radial-gradient(ellipse 60% 50% at 0% 100%, rgba(123, 94, 167, 0.08), transparent 60%), var(--glass);">
+      <div id="member-subscription-widget" class="dashboard-hero card-3d" style="display:none; margin-bottom: 18px; padding: 20px 24px; background: radial-gradient(ellipse 70% 50% at 100% 0%, rgba(217,79,110, 0.08), transparent 60%), radial-gradient(ellipse 60% 50% at 0% 100%, rgba(123, 94, 167, 0.08), transparent 60%), var(--glass);">
         <div style="display: flex; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 20px;">
           <div style="flex: 1; min-width: 200px;">
             <div style="font-size: 11px; color: var(--accent); font-weight: 600; letter-spacing: 1.5px; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; text-transform: uppercase;">
@@ -4268,7 +4280,7 @@ function updateUserArea() {
   const isAdmin = currentUser.role === 'admin';
   area.innerHTML = `
     <div style="display: flex; align-items: center; gap: 8px;">
-      ${!isAdmin ? `<button onclick="openSubscriptionModal()" style="background: rgba(0,229,160,0.12); color: var(--accent); border: 1px solid rgba(0,229,160,0.25); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,229,160,0.2)'" onmouseout="this.style.background='rgba(0,229,160,0.12)'" title="Voir mon abonnement">⏳ Mon Temps Restant</button>` : ''}
+      ${!isAdmin ? `<button onclick="openSubscriptionModal()" style="background: rgba(217,79,110,0.12); color: var(--accent); border: 1px solid rgba(217,79,110,0.25); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(217,79,110,0.2)'" onmouseout="this.style.background='rgba(217,79,110,0.12)'" title="Voir mon abonnement">⏳ Mon Temps Restant</button>` : ''}
       <div class="user-pill">${isAdmin ? '👑' : '👤'} ${currentUser.username}</div>
     </div>
   `;
@@ -4882,8 +4894,8 @@ function renderCardBadges(cards, isThird) {
 function renderBaccara(r, isNew) {
   const winner  = r.player > r.banker ? 'Joueur' : r.player < r.banker ? 'Banquier' : 'Égalité';
   const wColor  = r.player > r.banker ? 'var(--accent)' : r.player < r.banker ? 'var(--accent2)' : 'var(--gold)';
-  const wBg     = r.player > r.banker ? 'rgba(0,229,160,0.08)' : r.player < r.banker ? 'rgba(123,94,167,0.1)' : 'rgba(245,166,35,0.08)';
-  const wBorder = r.player > r.banker ? 'rgba(0,229,160,0.2)' : r.player < r.banker ? 'rgba(123,94,167,0.25)' : 'rgba(245,166,35,0.2)';
+  const wBg     = r.player > r.banker ? 'rgba(217,79,110,0.08)' : r.player < r.banker ? 'rgba(123,94,167,0.1)' : 'rgba(245,166,35,0.08)';
+  const wBorder = r.player > r.banker ? 'rgba(217,79,110,0.2)' : r.player < r.banker ? 'rgba(123,94,167,0.25)' : 'rgba(245,166,35,0.2)';
 
   const pCards = parseBacCards(r.playerCards || '');
   const bCards = parseBacCards(r.bankerCards || '');
@@ -5284,11 +5296,11 @@ function renderBaccaraStats() {
   const sparkSvg = diamSparkP.length >= 2 ? `
     <svg width="${svgW}" height="${svgH}" style="display:block;margin:6px 0">
       ${sparkLine(diamSparkP.map(p=>p.pD), '#e63946')}
-      ${sparkLine(diamSparkP.map(p=>p.bD), '#7b5ea7')}
+      ${sparkLine(diamSparkP.map(p=>p.bD), '#ffd24a')}
     </svg>
     <div style="display:flex;gap:12px;font-size:10px;color:var(--muted)">
       <span style="color:#e63946">■ Joueur ♦</span>
-      <span style="color:#7b5ea7">■ Banquier ♦</span>
+      <span style="color:#ffd24a">■ Banquier ♦</span>
     </div>` : '<div style="font-size:11px;color:var(--muted)">Données cartes insuffisantes</div>';
 
   // Intervalles moyens entre Carreaux
@@ -5315,7 +5327,7 @@ function renderBaccaraStats() {
     </div>
     <!-- Barres de distribution -->
     <div class="bar-row"><span class="bar-label">🟢 Joueur gagne</span><div class="bar-track"><div class="bar-fill" style="width:${pp}%;background:var(--accent)"></div></div><span class="bar-pct">${pW}/${total}</span></div>
-    <div class="bar-row"><span class="bar-label">🟣 Banquier gagne</span><div class="bar-track"><div class="bar-fill" style="width:${bp}%;background:#7b5ea7"></div></div><span class="bar-pct">${bW}/${total}</span></div>
+    <div class="bar-row"><span class="bar-label">🟣 Banquier gagne</span><div class="bar-track"><div class="bar-fill" style="width:${bp}%;background:#ffd24a"></div></div><span class="bar-pct">${bW}/${total}</span></div>
     <div class="bar-row"><span class="bar-label">🟡 Égalité</span><div class="bar-track"><div class="bar-fill" style="width:${tp}%;background:var(--gold)"></div></div><span class="bar-pct">${ties}/${total}</span></div>
     <div class="bar-row"><span class="bar-label">🔥 Naturelles (R)</span><div class="bar-track"><div class="bar-fill" style="width:${np}%;background:var(--gold)"></div></div><span class="bar-pct">${nats}/${total}</span></div>
     <div class="bar-row"><span class="bar-label">3ᵉ carte Joueur</span><div class="bar-track"><div class="bar-fill" style="width:${p3p}%;background:var(--accent2)"></div></div><span class="bar-pct">${p3}/${total}</span></div>
@@ -5347,8 +5359,8 @@ function renderBaccaraStats() {
       <div class="bac-kpi"><div class="bac-kpi-val" style="color:#e63946">${dpBoth}%</div><div class="bac-kpi-lbl">♦ les deux</div></div>
     </div>
     <div class="bac-diamond-row"><span class="bac-diamond-lbl">♦ Joueur</span><div class="bac-diamond-bar"><div class="bac-diamond-fill" style="width:${dpP}%"></div></div><span class="bac-diamond-pct">${diamP} fois</span></div>
-    <div class="bac-diamond-row"><span class="bac-diamond-lbl">♦ Banquier</span><div class="bac-diamond-bar"><div class="bac-diamond-fill" style="width:${dpB}%;background:linear-gradient(90deg,#7b5ea7,#b09dd0)"></div></div><span class="bac-diamond-pct">${diamB} fois</span></div>
-    <div class="bac-diamond-row"><span class="bac-diamond-lbl">♦ Les deux</span><div class="bac-diamond-bar"><div class="bac-diamond-fill" style="width:${dpBoth}%;background:linear-gradient(90deg,#e63946,#7b5ea7)"></div></div><span class="bac-diamond-pct">${diamBoth} fois</span></div>
+    <div class="bac-diamond-row"><span class="bac-diamond-lbl">♦ Banquier</span><div class="bac-diamond-bar"><div class="bac-diamond-fill" style="width:${dpB}%;background:linear-gradient(90deg,#ffd24a,#b09dd0)"></div></div><span class="bac-diamond-pct">${diamB} fois</span></div>
+    <div class="bac-diamond-row"><span class="bac-diamond-lbl">♦ Les deux</span><div class="bac-diamond-bar"><div class="bac-diamond-fill" style="width:${dpBoth}%;background:linear-gradient(90deg,#e63946,#ffd24a)"></div></div><span class="bac-diamond-pct">${diamBoth} fois</span></div>
     <div style="margin-top:12px">
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Courbe d'apparition ♦ (20 dernières mains)</div>
       ${sparkSvg}
@@ -6891,7 +6903,7 @@ async function runGroqAnalysis(container, game, data, localSummary) {
           </div>
           <div class="prono-bar-track"><div class="prono-bar-fill" style="width:${g.confidence || 0}%;background:linear-gradient(90deg,var(--accent-2),var(--accent2))"></div></div>
           <div class="prono-reasoning" style="margin-top:12px;font-size:13px;line-height:1.7">🔬 ${g.analysis || ''}</div>
-          ${g.strategy ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(0,229,160,0.06);border-left:3px solid var(--accent);border-radius:6px;font-size:12px;line-height:1.6"><strong style="color:var(--accent)">🎯 Stratégie :</strong> ${g.strategy}</div>` : ''}
+          ${g.strategy ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(217,79,110,0.06);border-left:3px solid var(--accent);border-radius:6px;font-size:12px;line-height:1.6"><strong style="color:var(--accent)">🎯 Stratégie :</strong> ${g.strategy}</div>` : ''}
           ${g.signal ? `<div style="margin-top:8px;padding:10px 12px;background:rgba(0,229,255,0.06);border-left:3px solid var(--accent-2);border-radius:6px;font-size:12px;line-height:1.6"><strong style="color:var(--accent-2)">💎 Signal détecté :</strong> ${g.signal}</div>` : ''}
           ${lowDataNote}
         </div>
@@ -6989,7 +7001,7 @@ async function runAnalysis() {
       if (p.isReco) {
         // Carte recommandation spéciale
         return `
-          <div class="prono-card" style="border:2px solid var(--accent);background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(123,94,167,0.06))">
+          <div class="prono-card" style="border:2px solid var(--accent);background:linear-gradient(135deg,rgba(217,79,110,0.06),rgba(123,94,167,0.06))">
             <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">⭐ ${p.horizon}</div>
             <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:8px">${p.prediction}</div>
             <div style="font-size:11px;color:var(--muted);line-height:1.6">${p.raisonnement}</div>
@@ -7194,7 +7206,7 @@ function renderHistory() {
         <div class="ai-badge" style="font-size:10px">🤖 HADAR AI</div>
       </div>
       ${h.hadar ? `
-        <div style="padding:12px 14px;background:linear-gradient(135deg,rgba(0,229,160,0.08),rgba(123,94,167,0.08));border:1px solid rgba(0,229,160,0.25);border-radius:10px;margin-bottom:10px">
+        <div style="padding:12px 14px;background:linear-gradient(135deg,rgba(217,79,110,0.08),rgba(123,94,167,0.08));border:1px solid rgba(217,79,110,0.25);border-radius:10px;margin-bottom:10px">
           <div style="font-size:10px;font-weight:800;color:var(--accent);letter-spacing:1px;margin-bottom:6px">🎯 HADAR AI · #N${h.hadar.nextN}</div>
           <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">${h.hadar.prediction}</div>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -7406,7 +7418,7 @@ function renderFixtures() {
         const statusLabel = isLive ? 'Match en cours' : 'Programmé';
         const meta = [f.bookmaker, formatFixtureTime(f.startTime)].filter(Boolean).join(' · ');
         const ai = (typeof computeMiniAIPronostic === 'function') ? computeMiniAIPronostic(f.game, f.home, f.away) : null;
-        const aiHtml = ai ? `<div style="margin-top:10px;padding:10px;border:1px solid rgba(0,229,160,.22);border-radius:10px;background:rgba(0,229,160,.055);font-size:11px">
+        const aiHtml = ai ? `<div style="margin-top:10px;padding:10px;border:1px solid rgba(217,79,110,.22);border-radius:10px;background:rgba(217,79,110,.055);font-size:11px">
           <div style="font-weight:900;color:var(--accent);margin-bottom:5px">🤖 IA dédiée · ${ai.resultLabel}</div>
           <div style="display:flex;justify-content:space-between;gap:8px;color:var(--muted)"><span>Score : <b style="color:var(--gold)">${ai.score}</b></span><span>Confiance : <b style="color:var(--accent)">${ai.confidenceLabel}</b></span></div>
           <div style="margin-top:5px;color:var(--muted)">H2H : <b>${ai.details.h2h.total}</b> · DOM ${ai.details.h2h.hW}V · N ${ai.details.h2h.d} · EXT ${ai.details.h2h.aW}V</div>
@@ -7630,7 +7642,7 @@ function resetAnalysisStateForContext(ctx) {
 function renderContextIdentity(ctx) {
   if (!ctx) return '';
   const src = ctx.bookmaker && ctx.bookmaker !== 'manual' ? ctx.bookmaker : 'Sélection manuelle';
-  return `<div style="margin-bottom:12px;padding:12px 14px;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.28);border-radius:12px">
+  return `<div style="margin-bottom:12px;padding:12px 14px;background:rgba(217,79,110,.08);border:1px solid rgba(217,79,110,.28);border-radius:12px">
     <div style="font-size:12px;font-weight:900;color:var(--accent);letter-spacing:.4px;margin-bottom:8px">Confrontation analysée</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
       <div><b>Domicile :</b> ${ctx.home}</div>
@@ -7845,7 +7857,7 @@ function computeMiniAIPronostic(game, home, away) {
 }
 function renderMiniAIPronostic(p) {
   const confColor = p.confidenceLabel === 'Très élevée' ? 'var(--accent)' : p.confidenceLabel === 'Élevée' ? 'var(--gold)' : p.confidenceLabel === 'Moyenne' ? '#7cc7ff' : 'var(--muted)';
-  return `<div class="h2h-card" style="border-color:rgba(0,229,160,.38);background:linear-gradient(135deg,rgba(0,229,160,.08),rgba(123,94,167,.10))">
+  return `<div class="h2h-card" style="border-color:rgba(217,79,110,.38);background:linear-gradient(135deg,rgba(217,79,110,.08),rgba(123,94,167,.10))">
     <div class="h2h-title">🤖 Mini-pronostic IA automatique</div>
     <div class="h2h-teams"><span>${p.home}</span><span class="h2h-vs">vs</span><span>${p.away}</span></div>
     <div class="h2h-score">
@@ -7856,7 +7868,7 @@ function renderMiniAIPronostic(p) {
     <div class="h2h-bars">
       <div class="bar-row"><span class="bar-label">Victoire domicile</span><div class="bar-track"><div class="bar-fill" style="width:${miniAIPct(p.probabilities.home)}%;background:var(--accent)"></div></div><span class="bar-pct">${miniAIPct(p.probabilities.home)}%</span></div>
       <div class="bar-row"><span class="bar-label">Match nul</span><div class="bar-track"><div class="bar-fill" style="width:${miniAIPct(p.probabilities.draw)}%;background:var(--gold)"></div></div><span class="bar-pct">${miniAIPct(p.probabilities.draw)}%</span></div>
-      <div class="bar-row"><span class="bar-label">Victoire extérieur</span><div class="bar-track"><div class="bar-fill" style="width:${miniAIPct(p.probabilities.away)}%;background:#7b5ea7"></div></div><span class="bar-pct">${miniAIPct(p.probabilities.away)}%</span></div>
+      <div class="bar-row"><span class="bar-label">Victoire extérieur</span><div class="bar-track"><div class="bar-fill" style="width:${miniAIPct(p.probabilities.away)}%;background:#ffd24a"></div></div><span class="bar-pct">${miniAIPct(p.probabilities.away)}%</span></div>
     </div>
     <div class="h2h-meta"><div><b>Analyse IA :</b> ${p.summary}</div></div>
   </div>`;
@@ -7872,7 +7884,7 @@ function renderDedicatedAIAnalysis(ctx, p, gameName, lowDataWarning = '') {
     : `${ctx.bookmaker || 'Sélection manuelle'}`;
   const confClass = p.confidenceScore >= 70 ? 'high' : p.confidenceScore >= 58 ? 'mid' : 'low';
   return `${lowDataWarning || ''}${renderContextIdentity(ctx)}
-    <div class="prono-card" style="border:2px solid rgba(0,229,160,.45);background:linear-gradient(135deg,rgba(0,229,160,.08),rgba(123,94,167,.08))">
+    <div class="prono-card" style="border:2px solid rgba(217,79,110,.45);background:linear-gradient(135deg,rgba(217,79,110,.08),rgba(123,94,167,.08))">
       <div class="prono-top">
         <div>
           <div class="prono-game-tag">🤖 Analyse IA dédiée · ${gameName}</div>
@@ -7892,7 +7904,7 @@ function renderDedicatedAIAnalysis(ctx, p, gameName, lowDataWarning = '') {
       <div class="h2h-bars" style="margin-top:10px">
         <div class="bar-row"><span class="bar-label">Victoire domicile</span><div class="bar-track"><div class="bar-fill" style="width:${miniAIPct(p.probabilities.home)}%;background:var(--accent)"></div></div><span class="bar-pct">${miniAIPct(p.probabilities.home)}%</span></div>
         <div class="bar-row"><span class="bar-label">Match nul</span><div class="bar-track"><div class="bar-fill" style="width:${miniAIPct(p.probabilities.draw)}%;background:var(--gold)"></div></div><span class="bar-pct">${miniAIPct(p.probabilities.draw)}%</span></div>
-        <div class="bar-row"><span class="bar-label">Victoire extérieur</span><div class="bar-track"><div class="bar-fill" style="width:${miniAIPct(p.probabilities.away)}%;background:#7b5ea7"></div></div><span class="bar-pct">${miniAIPct(p.probabilities.away)}%</span></div>
+        <div class="bar-row"><span class="bar-label">Victoire extérieur</span><div class="bar-track"><div class="bar-fill" style="width:${miniAIPct(p.probabilities.away)}%;background:#ffd24a"></div></div><span class="bar-pct">${miniAIPct(p.probabilities.away)}%</span></div>
       </div>
     </div>
     <div class="prono-card">
@@ -7930,7 +7942,7 @@ function runH2H(game, home, away, meta = {}) {
       <div class="h2h-title">⚖️ Confrontation directe</div>
       <div class="h2h-teams"><span>${home}</span><span class="h2h-vs">vs</span><span>${away}</span></div>
       <div class="empty-state" style="padding:20px">Aucune confrontation enregistrée entre ces deux équipes dans l'historique ${FIXTURE_LABELS[game]||game}.<br><span style="font-size:11px;display:block;margin-top:8px">Le mini-pronostic ci-dessus utilise uniquement la forme, les derniers résultats, les séries, les moyennes de buts, les signaux bookmaker et le modèle IA local — aucune donnée H2H n'est fabriquée.</span></div>
-      <div style="margin-top:14px;padding:12px 14px;background:linear-gradient(135deg,rgba(0,229,160,0.08),rgba(123,94,167,0.08));border:1px solid rgba(0,229,160,0.3);border-radius:10px;text-align:center">
+      <div style="margin-top:14px;padding:12px 14px;background:linear-gradient(135deg,rgba(217,79,110,0.08),rgba(123,94,167,0.08));border:1px solid rgba(217,79,110,0.3);border-radius:10px;text-align:center">
         <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🚀 Analyse IA en cours de lancement...</div>
         <div style="font-size:11px;color:var(--muted)">Redirection automatique vers la section "Analyse IA"</div>
       </div>
@@ -7973,14 +7985,14 @@ function runH2H(game, home, away, meta = {}) {
     <div class="h2h-bars">
       <div class="bar-row"><span class="bar-label">${home}</span><div class="bar-track"><div class="bar-fill" style="width:${pct(wH)}%;background:var(--accent)"></div></div><span class="bar-pct">${pct(wH)}%</span></div>
       <div class="bar-row"><span class="bar-label">Nuls</span><div class="bar-track"><div class="bar-fill" style="width:${pct(draws)}%;background:var(--gold)"></div></div><span class="bar-pct">${pct(draws)}%</span></div>
-      <div class="bar-row"><span class="bar-label">${away}</span><div class="bar-track"><div class="bar-fill" style="width:${pct(wA)}%;background:#7b5ea7"></div></div><span class="bar-pct">${pct(wA)}%</span></div>
+      <div class="bar-row"><span class="bar-label">${away}</span><div class="bar-track"><div class="bar-fill" style="width:${pct(wA)}%;background:#ffd24a"></div></div><span class="bar-pct">${pct(wA)}%</span></div>
     </div>
     <div class="h2h-meta">
       <div><b>${total}</b> confrontation(s) · ${winnerTotal==='Égalité'?'bilan équilibré':`avantage <b>${winnerTotal}</b>`}</div>
       <div>Buts : <b>${home}</b> ${gfH} · <b>${away}</b> ${gfA}</div>
       <div>Dernière rencontre (#N${last.n}) : ${home} ${lastHG} - ${lastAG} ${away}</div>
     </div>
-    <div style="margin-top:14px;padding:12px 14px;background:linear-gradient(135deg,rgba(0,229,160,0.08),rgba(123,94,167,0.08));border:1px solid rgba(0,229,160,0.3);border-radius:10px;text-align:center">
+    <div style="margin-top:14px;padding:12px 14px;background:linear-gradient(135deg,rgba(217,79,110,0.08),rgba(123,94,167,0.08));border:1px solid rgba(217,79,110,0.3);border-radius:10px;text-align:center">
       <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🚀 Analyse IA en cours de lancement...</div>
       <div style="font-size:11px;color:var(--muted)">Redirection automatique vers la section "Analyse IA"</div>
     </div>
@@ -8003,7 +8015,7 @@ function selectPronoForGame(game) {
   const idx = order.indexOf(game);
   if (idx >= 0 && btns[idx]) selectPronoGame(game, btns[idx], true);
   // Réinitialise la page prono et lance l'analyse automatiquement
-  document.getElementById('prono-container').innerHTML = `<div class="empty-state"><div class="empty-icon">🤖</div><div style="padding:20px;text-align:center"><span class="loading-spinner" style="display:inline-block;width:18px;height:18px;border:2px solid rgba(0,229,160,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px"></span> Analyse HADAR AI dédiée en cours pour ${window.__activeH2HContext && window.__activeH2HContext.game === game ? (window.__activeH2HContext.home + ' vs ' + window.__activeH2HContext.away) : (FIXTURE_LABELS[game]||game)}...</div></div>`;
+  document.getElementById('prono-container').innerHTML = `<div class="empty-state"><div class="empty-icon">🤖</div><div style="padding:20px;text-align:center"><span class="loading-spinner" style="display:inline-block;width:18px;height:18px;border:2px solid rgba(217,79,110,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px"></span> Analyse HADAR AI dédiée en cours pour ${window.__activeH2HContext && window.__activeH2HContext.game === game ? (window.__activeH2HContext.home + ' vs ' + window.__activeH2HContext.away) : (FIXTURE_LABELS[game]||game)}...</div></div>`;
   setTimeout(() => {
     runAnalysis();
     // Scroll vers le conteneur des résultats une fois l'analyse terminée
@@ -8053,7 +8065,7 @@ function setLiveIndicator(online) {
   const badge = document.getElementById('live-badge');
   if (!badge) return;
   if (online) {
-    badge.style.cssText = 'background:rgba(0,229,160,0.12);border-color:rgba(0,229,160,0.3);color:var(--accent)';
+    badge.style.cssText = 'background:rgba(217,79,110,0.12);border-color:rgba(217,79,110,0.3);color:var(--accent)';
     badge.innerHTML = '<div class="live-dot" style="background:var(--accent)"></div> LIVE';
   } else {
     badge.style.cssText = 'background:rgba(255,77,109,0.12);border-color:rgba(255,77,109,0.3);color:var(--red)';
@@ -8460,7 +8472,7 @@ async function fetchAndUpdate(game) {
 <!-- PWA Install Banner -->
 <div id="pwa-banner" style="
   display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-  background:linear-gradient(135deg,#111520,#181d2e); border:1px solid rgba(0,229,160,0.4);
+  background:linear-gradient(135deg,#111520,#181d2e); border:1px solid rgba(217,79,110,0.4);
   border-radius:14px; padding:14px 18px; z-index:500; width:90%; max-width:380px;
   box-shadow:0 8px 32px rgba(0,0,0,0.5); backdrop-filter:blur(10px);
   display:none; align-items:center; gap:14px;
@@ -8474,7 +8486,7 @@ async function fetchAndUpdate(game) {
   </div>
   <div style="display:flex;gap:8px;flex-shrink:0">
     <button onclick="installPWA()" style="
-      background:linear-gradient(135deg,#7b5ea7,#00e5a0); border:none; border-radius:8px;
+      background:linear-gradient(135deg,#ffd24a,#d94f6e); border:none; border-radius:8px;
       color:#000; font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:700;
       padding:8px 14px; cursor:pointer;
     ">Installer</button>
@@ -8568,8 +8580,8 @@ async function fetchAndUpdate(game) {
     function colors() {
       const day = document.body.classList.contains('day-mode');
       return {
-        node: day ? 'rgba(0,180,140,0.55)'   : 'rgba(0,229,160,0.65)',
-        link: day ? 'rgba(0,180,140,'        : 'rgba(0,229,160,',
+        node: day ? 'rgba(0,180,140,0.55)'   : 'rgba(217,79,110,0.65)',
+        link: day ? 'rgba(0,180,140,'        : 'rgba(217,79,110,',
         link2:day ? 'rgba(123,94,167,'       : 'rgba(123,94,167,'
       };
     }
@@ -8686,9 +8698,9 @@ async function fetchAndUpdate(game) {
       text:   day ? '#1a1f35' : '#e8eaf0',
       muted:  day ? '#7a80a0' : '#5a6280',
       grid:   day ? 'rgba(0,0,0,0.06)'  : 'rgba(255,255,255,0.05)',
-      accent: '#00e5a0',
-      accent2:'#7b5ea7',
-      accent3:'#00d4ff',
+      accent: '#d94f6e',
+      accent2:'#ffd24a',
+      accent3:'#e5738f',
       gold:   '#f5a623',
       red:    '#ff4d6d'
     };
@@ -8717,8 +8729,8 @@ async function fetchAndUpdate(game) {
 
     safeDestroy('confidence');
     const gradient = cv.getContext('2d').createLinearGradient(0, 0, 0, 260);
-    gradient.addColorStop(0, 'rgba(0,229,160,0.45)');
-    gradient.addColorStop(1, 'rgba(0,229,160,0)');
+    gradient.addColorStop(0, 'rgba(217,79,110,0.45)');
+    gradient.addColorStop(1, 'rgba(217,79,110,0)');
 
     CHARTS.confidence = new Chart(cv, {
       type: 'line',
@@ -8748,7 +8760,7 @@ async function fetchAndUpdate(game) {
           tooltip: {
             backgroundColor: 'rgba(15,21,34,0.95)',
             titleColor: t.text, bodyColor: t.text,
-            borderColor: 'rgba(0,229,160,0.3)', borderWidth: 1,
+            borderColor: 'rgba(217,79,110,0.3)', borderWidth: 1,
             padding: 10, cornerRadius: 8, displayColors: false
           }
         },
@@ -8804,7 +8816,7 @@ async function fetchAndUpdate(game) {
           tooltip: {
             backgroundColor: 'rgba(15,21,34,0.95)',
             titleColor: t.text, bodyColor: t.text,
-            borderColor: 'rgba(0,229,160,0.3)', borderWidth: 1,
+            borderColor: 'rgba(217,79,110,0.3)', borderWidth: 1,
             padding: 10, cornerRadius: 8,
             callbacks: {
               label: (ctx) => {
@@ -8853,7 +8865,7 @@ async function fetchAndUpdate(game) {
           {
             label: 'Volume',
             data: volumes,
-            backgroundColor: 'rgba(0,229,160,0.18)',
+            backgroundColor: 'rgba(217,79,110,0.18)',
             borderColor: t.accent,
             borderWidth: 2,
             pointBackgroundColor: t.accent,
@@ -8878,7 +8890,7 @@ async function fetchAndUpdate(game) {
           tooltip: {
             backgroundColor: 'rgba(15,21,34,0.95)',
             titleColor: t.text, bodyColor: t.text,
-            borderColor: 'rgba(0,229,160,0.3)', borderWidth: 1
+            borderColor: 'rgba(217,79,110,0.3)', borderWidth: 1
           }
         },
         scales: {
