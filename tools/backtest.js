@@ -107,7 +107,7 @@ function bar(v, max, width = 22) {
 }
 
 (function main() {
-  const games = ['penalty18', 'penalty22', 'fifa4x4', 'baccara', 'jeu21'];
+  const games = ['penalty18', 'penalty22', 'fifa4x4', 'fifa3x3', 'baccara', 'jeu21'];
   const report = { generatedAt: new Date().toISOString(), warmup: WARMUP, games: {} };
 
   console.log('\n╔══════════════════════════════════════════════════════════════════╗');

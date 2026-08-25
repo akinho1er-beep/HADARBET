@@ -57,6 +57,7 @@ const CHANNELS = {
   penalty22: 'statistika_fifa_penalty_fast2022',
   jeu21:     'statistika_21f',
   fifa4x4:   'statistika_fifa_4x4',
+  fifa3x3:   'fifa_3_3_fast',
   // ⚠️ Aviator : aucune source publique d'historique de multiplicateurs n'existe.
   // Le jeu (Spribe) génère ses multiplicateurs en temps réel via WebSocket, non archivés.
   // On ne déclare donc PAS de canal Telegram ici : le frontend utilise les données
@@ -68,7 +69,7 @@ const CHANNELS = {
 // Le frontend demande maintenant /results/:game?limit=500.
 // On conserve donc jusqu'à 500 événements par jeu côté serveur.
 const VALID_GAMES = [...Object.keys(CHANNELS), 'aviator'];
-const UPCOMING_GAMES = ['fifa4x4', 'penalty18', 'penalty22'];
+const UPCOMING_GAMES = ['fifa4x4', 'fifa3x3', 'penalty18', 'penalty22'];
 const BOOKMAKER_SOURCES = ['1xbet']; // seul scraper disponible (onexbet_scraper)
 // ✅ Aligné sur storage.js : à 500, l'historique collecté était tronqué.
 const MAX_RESULTS_PER_GAME = parseInt(process.env.MAX_RESULTS || '5000', 10);
@@ -151,12 +152,12 @@ function adminMiddleware(req, res, next) {
 // Rencontres à venir réellement récupérées chez les bookmakers.
 // IMPORTANT : cet état ne doit jamais être alimenté depuis l'historique
 // des résultats ni par une rotation simulée. Uniquement scraper.fetchUpcoming().
-const upcomingFixtures = { fifa4x4: [], penalty18: [], penalty22: [] };
-const upcomingUpdatedAt = { fifa4x4: null, penalty18: null, penalty22: null };
+const upcomingFixtures = { fifa4x4: [], fifa3x3: [], penalty18: [], penalty22: [] };
+const upcomingUpdatedAt = { fifa4x4: null, fifa3x3: null, penalty18: null, penalty22: null };
 // true quand le bookmaker a renvoyé une page de blocage / une erreur réseau.
 // Permet à l'interface de dire « source inaccessible » au lieu de laisser
 // croire à tort qu'aucun match n'est programmé.
-const upcomingBlocked = { fifa4x4: false, penalty18: false, penalty22: false };
+const upcomingBlocked = { fifa4x4: false, fifa3x3: false, penalty18: false, penalty22: false };
 let upcomingPollInProgress = false;
 
 function normalizeLimit(value, fallback = DEFAULT_RESULTS_LIMIT) {
@@ -182,7 +183,7 @@ function resultKey(game, item) {
   // Aviator : pas de message Telegram (données générées) → multiplicateur + ts.
   if (game === 'aviator') return `av:${item?.multiplier ?? ''}:${item?.ts ?? ''}`;
   // Repli pour les enregistrements anciens dépourvus de msgId.
-  if (item && item.n !== undefined && item.n !== null && game !== 'fifa4x4') {
+  if (item && item.n !== undefined && item.n !== null && game !== 'fifa4x4' && game !== 'fifa3x3') {
     return `n:${item.n}`;
   }
   return `${item?.home ?? ''}|${item?.away ?? ''}|${item?.score ?? ''}`;
@@ -280,6 +281,19 @@ const TEAMS = {
   'Марсель': 'Marseille',                 'Рома': 'Roma',
   'Лацио': 'Lazio',                       'Валенсия': 'Valencia',
   'Бетис': 'Betis',                       'Монако': 'Monaco',
+  // ── FIFA 3×3 (Ligue de conférence FC25) — équipes européennes ──
+  // Noms alignés sur ceux renvoyés par l'API 1xBet, afin que la rencontre
+  // annoncée soit bien reliée à l'historique de l'équipe.
+  'Ницца': 'Nice',                       'Олимпиакос': 'Olympiakos',
+  'Сельта': 'Celta',                     'РедБулл': 'Red Bull',
+  'АЗ': 'AZ Alkmaar',                    'Андерлехт': 'Anderlecht',
+  'Фенербахче': 'Fenerbahce',            'Лилль': 'Lille',
+  'Брага': 'Braga',                      'Хартс': 'Hearts',
+  'Базель': 'Bâle',                      'Фиорентина': 'Fiorentine',
+  'Айнтрахт': 'Eintracht',
+  'БоруссияМёнхенгладбах': 'Borussia Monchengladbach',
+  'Боруссия Мёнхенгладбах': 'Borussia Monchengladbach',
+
   // FIFA 4×4 teams (Correction des noms cyrilliques → anglais)
   'БрайтонэндХавАльбион': 'Brighton',    'Вулверхэмптон': 'Wolves',
   'Брентфорд': 'Brentford',              'ШеффилдЮнайтед': 'Sheffield Utd',
@@ -420,7 +434,8 @@ function extractMessages(html, game) {
     }
 
     // FIFA 4×4 : capturer tous messages avec hashtag équipes ou score
-    if (game === 'fifa4x4') {
+    // FIFA 4×4 et 3×3 partagent exactement le même format de message.
+    if (game === 'fifa4x4' || game === 'fifa3x3') {
       const hasTeam  = text.includes('_') && text.startsWith('#');
       const hasScore = text.match(/\d+:\d+/) && text.includes('#T');
       if (hasTeam || hasScore) { messages.push(text); continue; }
@@ -622,7 +637,7 @@ async function updateChannel(key, username) {
     let messages = rich;
 
     // FIFA 4×4 : pairer les lignes équipes + score consécutives
-    if (key === 'fifa4x4') {
+    if (key === 'fifa4x4' || key === 'fifa3x3') {
       const paired = [];
       for (let i = 0; i < messages.length; i++) {
         const cur = messages[i];
@@ -640,7 +655,7 @@ async function updateChannel(key, username) {
         }
       }
       messages = paired.length > 0 ? paired : messages;
-      console.log(`[fifa4x4] ${messages.length} messages après pairing`);
+      console.log(`[${key}] ${messages.length} messages après pairing`);
     }
 
     if (messages.length === 0) {
@@ -655,7 +670,7 @@ async function updateChannel(key, username) {
       let r = null;
       if (key === 'baccara')       r = parseBaccara(msg);
       else if (key === 'jeu21')    r = parseJeu21(msg);
-      else if (key === 'fifa4x4')  r = parseFifa4x4(msg, i, item.id, item.ts);
+      else if (key === 'fifa4x4' || key === 'fifa3x3') r = parseFifa4x4(msg, i, item.id, item.ts);
       else if (key === 'aviator')  r = parseAviator(msg);
       else                         r = parsePenalty(msg);
       if (r) {
@@ -863,7 +878,7 @@ async function syncGame(game) {
 // node-cron est optionnel : fallback setInterval s'il est absent.
 async function hourlySync() {
   console.log('⏰ Lancement de la synchronisation horaire automatique...');
-  const games = ['baccara', 'penalty18', 'penalty22', 'jeu21', 'fifa4x4'];
+  const games = ['baccara', 'penalty18', 'penalty22', 'jeu21', 'fifa4x4', 'fifa3x3'];
   for (const game of games) {
     try {
       await syncGame(game);
@@ -964,6 +979,7 @@ app.get('/status', (req, res) => {
       penalty22: storage.getResults('penalty22').length,
       jeu21:     storage.getResults('jeu21').length,
       fifa4x4:   storage.getResults('fifa4x4').length,
+      fifa3x3:   storage.getResults('fifa3x3').length,
       aviator:   AVIATOR_FALLBACK.length,
     }
   });
@@ -1337,6 +1353,7 @@ const GAME_NATURE = {
   penalty18: { type: 'virtual-penalty',  label: 'FIFA Penalty 18 (simulation tirs au but 1xBet)', noDraw: true,  target: 'le vainqueur du prochain tir au but (DOMICILE ou EXTÉRIEUR — un nul est IMPOSSIBLE) et le score le plus probable' },
   penalty22: { type: 'virtual-penalty',  label: 'FIFA Penalty 22 (simulation tirs au but 1xBet)', noDraw: true,  target: 'le vainqueur du prochain tir au but (DOMICILE ou EXTÉRIEUR — un nul est IMPOSSIBLE) et le score le plus probable' },
   fifa4x4:   { type: 'virtual-football', label: 'FIFA 4×4 FC24 (simulation match 1xBet)',        noDraw: false, target: 'le résultat du prochain match (DOMICILE / NUL / EXTÉRIEUR) et le score le plus probable' },
+  fifa3x3:   { type: 'virtual-football', label: 'FIFA 3×3 FC25 Ligue de conférence (1xBet)',    noDraw: false, target: 'le résultat du prochain match (DOMICILE / NUL / EXTÉRIEUR) et le score le plus probable' },
   baccara:   { type: 'baccara',          label: 'Baccara casino',         target: 'le côté gagnant du prochain coup (Joueur / Banquier / Égalité)' },
   jeu21:     { type: 'blackjack',        label: 'Blackjack (Jeu 21)',     target: 'le résultat de la prochaine main (WIN / LOSE / PUSH)' },
   aviator:   { type: 'crash',            label: 'Aviator (crash game Spribe)', target: 'la zone de cash-out optimale et la probabilité de crash précoce (<2x)' },
@@ -1431,7 +1448,7 @@ function computeGroqStats(game, data) {
   const seq = parsed.slice(0,15).map(x => x.h>x.a?'DOM':x.h===x.a?'NUL':'EXT');
   let streakSide = seq[0], streakLen = 0;
   for (const s of seq) { if (s === streakSide) streakLen++; else break; }
-  const threshold = game === 'fifa4x4' ? 5.5 : 3.5;
+  const threshold = (game === 'fifa4x4' || game === 'fifa3x3') ? 5.5 : 3.5;
   const over = totGoalsArr.filter(g => g > threshold).length;
 
   // Performances historiques par équipe (exploitable par Groq, sans logique football réelle)
@@ -1660,7 +1677,7 @@ const httpServer = app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n✅ HADAR BetAnalytics Server v3 (Resilient Edition)`);
   console.log(`   Port: ${PORT}`);
   console.log(`   URL : http://localhost:${PORT}`);
-  console.log(`   Jeux: Baccara | Penalty 18 | Penalty 22 | Jeu 21 | FIFA 4×4 | Aviator\n`);
+  console.log(`   Jeux: Baccara | Penalty 18 | Penalty 22 | Jeu 21 | FIFA 4×4 | FIFA 3×3 | Aviator\n`);
 });
 
 // Gestion explicite des erreurs de démarrage HTTP.

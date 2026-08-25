@@ -3669,6 +3669,7 @@ body.day-mode .sub-row { background: rgba(0, 130, 90, 0.03) !important; }
       <!-- Sélecteur de jeu -->
       <div class="game-selector">
         <button class="game-btn active" onclick="selectFixtureGame('fifa4x4',this)">⚽ FIFA 4×4</button>
+        <button class="game-btn" onclick="selectFixtureGame('fifa3x3',this)">⚽ FIFA 3×3</button>
         <button class="game-btn" onclick="selectFixtureGame('penalty18',this)">🥅 Penalty 18</button>
         <button class="game-btn" onclick="selectFixtureGame('penalty22',this)">🥅 Penalty 22</button>
       </div>
@@ -3729,6 +3730,7 @@ body.day-mode .sub-row { background: rgba(0, 130, 90, 0.03) !important; }
         <button class="game-btn" onclick="selectGame('baccara',this)">🃏 Baccara</button>
         <button class="game-btn" onclick="selectGame('jeu21',this)">🃏 Jeu 21</button>
         <button class="game-btn" onclick="selectGame('fifa4x4',this)">⚽ FIFA 4×4</button>
+        <button class="game-btn" onclick="selectGame('fifa3x3',this)">⚽ FIFA 3×3</button>
         <button class="game-btn" onclick="selectGame('aviator',this)">✈️ Aviator</button>
       </div>
       <div class="section-title">Derniers résultats</div>
@@ -3743,6 +3745,7 @@ body.day-mode .sub-row { background: rgba(0, 130, 90, 0.03) !important; }
         <button class="game-btn" onclick="selectStatGame('baccara',this)">🃏 Baccara</button>
         <button class="game-btn" onclick="selectStatGame('jeu21',this)">🃏 Jeu 21</button>
         <button class="game-btn" onclick="selectStatGame('fifa4x4',this)">⚽ FIFA 4×4</button>
+        <button class="game-btn" onclick="selectStatGame('fifa3x3',this)">⚽ FIFA 3×3</button>
         <button class="game-btn" onclick="selectStatGame('aviator',this)">✈️ Aviator</button>
       </div>
       <div id="stats-container"></div>
@@ -3760,6 +3763,7 @@ body.day-mode .sub-row { background: rgba(0, 130, 90, 0.03) !important; }
         <button class="game-btn" onclick="selectPronoGame('baccara',this)">🃏 Baccara</button>
         <button class="game-btn" onclick="selectPronoGame('jeu21',this)">🃏 Jeu 21</button>
         <button class="game-btn" onclick="selectPronoGame('fifa4x4',this)">⚽ FIFA 4×4</button>
+        <button class="game-btn" onclick="selectPronoGame('fifa3x3',this)">⚽ FIFA 3×3</button>
         <button class="game-btn" onclick="selectPronoGame('aviator',this)">✈️ Aviator</button>
       </div>
       <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">
@@ -3821,7 +3825,7 @@ const DATA_FETCH_LIMIT = 500;
 // ══════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════
-const DATA = { penalty18: [], penalty22: [], baccara: [], jeu21: [], fifa4x4: [], aviator: [] };
+const DATA = { penalty18: [], penalty22: [], baccara: [], jeu21: [], fifa4x4: [], fifa3x3: [], aviator: [] };
 // Expose l'état aux scripts premium (dashboard/charts) exécutés dans d'autres blocs.
 window.DATA = DATA;
 // Fallback si i18n.js n'est pas chargé (prévisualisation locale/offline).
@@ -4816,7 +4820,7 @@ function renderResults() {
     container.innerHTML = data.map((r, i) => renderBaccara(r, i === 0)).join('');
   } else if (currentGame === 'jeu21') {
     container.innerHTML = data.map((r, i) => renderJeu21(r, i === 0)).join('');
-  } else if (currentGame === 'fifa4x4') {
+  } else if (currentGame === 'fifa4x4' || currentGame === 'fifa3x3') {
     container.innerHTML = data.map((r, i) => renderFifa4x4(r, i === 0)).join('');
   } else if (currentGame === 'aviator') {
     container.innerHTML = data.map((r, i) => renderAviator(r, i === 0)).join('');
@@ -5418,6 +5422,7 @@ window.analysisHistory = analysisHistory;
 const HADAR_CALIBRATION = {
   penalty18:   { model: "fréquence de base", accuracy: 0.551, brier: 0.4959, randomBrier: 0.5000, beatsRandom: true, independent: true, n: 1737, note: "Biais domicile structurel ~54 %. Elo+Poisson reste battu." },
   penalty22:   { model: "fréquence de base", accuracy: 0.544, brier: 0.4969, randomBrier: 0.5000, beatsRandom: true, independent: true, n: 1740, note: "L'anomalie d'alternance vue sur 288 obs. a DISPARU : c'était du bruit." },
+  fifa3x3:     { model: "Elo seul", accuracy: 0.505, brier: 0.5783, randomBrier: 0.6667, beatsRandom: true, independent: true, n: 1745, note: "Profil mesuré très proche du 4×4 (nuls 11,1 %, 7,2 buts/équipe) : mêmes réglages." },
   fifa4x4:     { model: "Elo seul", accuracy: 0.505, brier: 0.5783, randomBrier: 0.6667, beatsRandom: true, independent: true, n: 1737, note: "Avec ~1 780 matchs, l'Elo seul devance la fréquence de base." },
   baccara:     { model: "fréquence de base", accuracy: 0.441, brier: 0.6302, randomBrier: 0.6667, beatsRandom: true, independent: true, n: 1760, note: "Hors mains 0:0, la distribution colle à la théorie." },
   jeu21:       { model: "fréquence de base", accuracy: 0.586, brier: 0.5386, randomBrier: 0.6667, beatsRandom: true, independent: true, n: 1757, note: "LOSE domine : avantage maison, pas capacité de prédiction." },
@@ -5441,7 +5446,7 @@ function hpChrono(data) {
     ((a.ts || 0) - (b.ts || 0)) || (((a.msgId || a.n || 0)) - ((b.msgId || b.n || 0))));
 }
 function hpGameLabel(game) {
-  return { penalty18: 'Penalty 18', penalty22: 'Penalty 22', fifa4x4: 'FIFA 4×4',
+  return { penalty18: 'Penalty 18', penalty22: 'Penalty 22', fifa4x4: 'FIFA 4×4', fifa3x3: 'FIFA 3×3',
            baccara: 'Baccara', jeu21: 'Jeu 21', aviator: 'Aviator' }[game] || game;
 }
 
@@ -5547,7 +5552,8 @@ function hadarV4TeamModel(game, data) {
   // sur penalty18/22 où il a été mesuré moins performant que le hasard.
   const R = {};
   const ens = t => { if (R[t] === undefined) R[t] = 1500; };
-  const K = game === 'fifa4x4' ? 24 : 28, HA = game === 'fifa4x4' ? 35 : 45;
+  const estFifa = (game === 'fifa4x4' || game === 'fifa3x3');
+  const K = estFifa ? 24 : 28, HA = estFifa ? 35 : 45;
   rows.forEach(r => {
     ens(r.home); ens(r.away);
     const [x, y] = hpSafeScore(r.score);
@@ -5802,7 +5808,7 @@ function hadarV4Aviator(game, data) {
 
 // ── Routeur v4 ────────────────────────────────────────────────────────
 function hadarProAI(game, data) {
-  if (game === 'penalty18' || game === 'penalty22' || game === 'fifa4x4') return hadarV4TeamModel(game, data);
+  if (game === 'penalty18' || game === 'penalty22' || game === 'fifa4x4' || game === 'fifa3x3') return hadarV4TeamModel(game, data);
   if (game === 'baccara') return hadarV4Baccara(game, data);
   if (game === 'jeu21')   return hadarV4Jeu21(game, data);
   if (game === 'aviator') return hadarV4Aviator(game, data);
@@ -6201,7 +6207,7 @@ function hadarAI(game, data) {
   //   • Pattern offensif vs défensif
   //   • Écart de buts (différence souvent forte)
   // ══════════════════════════════════════════════════════════════════
-  if (game === 'fifa4x4') {
+  if (game === 'fifa4x4' || game === 'fifa3x3') {
     // ── Stats par équipe (propres au FIFA 4×4) ────────────────────
     const teamStats = {};
     let homeWins = 0, awayWins = 0, draws = 0;
@@ -6423,7 +6429,7 @@ function renderHadarCard(result, gameName) {
 }
 
 function analyzeLocal(game, data) {
-  const isPenalty = game === 'penalty18' || game === 'penalty22' || game === 'fifa4x4';
+  const isPenalty = game === 'penalty18' || game === 'penalty22' || game === 'fifa4x4' || game === 'fifa3x3';
 
   function clamp(v, mn, mx) { return Math.max(mn, Math.min(mx, v)); }
   function rnd(mn, mx) {
@@ -7289,9 +7295,9 @@ function closeMenu() {
 //  • Une équipe ne peut JAMAIS être opposée à elle-même.
 //  • Noms d'équipes normalisés en français (via translateTeamFR).
 // ══════════════════════════════════════════════════════════════════
-const FIXTURES_GAMES   = ['fifa4x4', 'penalty18', 'penalty22'];
-const FIXTURE_LABELS   = { fifa4x4:'FIFA 4×4', penalty18:'Penalty 18', penalty22:'Penalty 22' };
-const FIXTURE_ICONS    = { fifa4x4:'⚽', penalty18:'🥅', penalty22:'🥅' };
+const FIXTURES_GAMES   = ['fifa4x4', 'fifa3x3', 'penalty18', 'penalty22'];
+const FIXTURE_LABELS   = { fifa4x4:'FIFA 4×4', fifa3x3:'FIFA 3×3', penalty18:'Penalty 18', penalty22:'Penalty 22' };
+const FIXTURE_ICONS    = { fifa4x4:'⚽', fifa3x3:'⚽', penalty18:'🥅', penalty22:'🥅' };
 const WATCHLIST_KEY    = 'hadar_fixtures_watchlist';
 let   currentFixtureGame = 'fifa4x4';
 window.__lastFixtures = [];
@@ -7315,7 +7321,7 @@ function getTeamsForGame(game) {
 // IMPORTANT : aucune rotation, aucune prédiction, aucune génération locale.
 // Cette section lit uniquement /upcoming/:game, alimenté par les flux bookmaker
 // (1xBet / Fast Pari). Si l'API ne fournit rien, on n'affiche rien.
-window.__bookmakerFixtures = window.__bookmakerFixtures || { fifa4x4: [], penalty18: [], penalty22: [] };
+window.__bookmakerFixtures = window.__bookmakerFixtures || { fifa4x4: [], fifa3x3: [], penalty18: [], penalty22: [] };
 window.__bookmakerFixturesUpdatedAt = window.__bookmakerFixturesUpdatedAt || {};
 
 function normalizeClientFixture(f, game) {
@@ -7743,10 +7749,10 @@ function computeMiniAIPronostic(game, home, away) {
 
   const allGoals = rows.reduce((s, r) => { const [hg, ag] = miniAISafeScore(r.score); return s + hg + ag; }, 0);
   const globalGoalsPerTeam = rows.length ? Math.max(0.2, allGoals / (rows.length * 2)) : 1.4;
-  const lambdaH = miniAIClamp(((hRecent.avgGF || globalGoalsPerTeam) * 0.55 + (aRecent.avgGA || globalGoalsPerTeam) * 0.45), 0.15, game === 'fifa4x4' ? 8 : 5);
-  const lambdaA = miniAIClamp(((aRecent.avgGF || globalGoalsPerTeam) * 0.55 + (hRecent.avgGA || globalGoalsPerTeam) * 0.45), 0.15, game === 'fifa4x4' ? 8 : 5);
+  const lambdaH = miniAIClamp(((hRecent.avgGF || globalGoalsPerTeam) * 0.55 + (aRecent.avgGA || globalGoalsPerTeam) * 0.45), 0.15, (game === 'fifa4x4' || game === 'fifa3x3') ? 8 : 5);
+  const lambdaA = miniAIClamp(((aRecent.avgGF || globalGoalsPerTeam) * 0.55 + (hRecent.avgGA || globalGoalsPerTeam) * 0.45), 0.15, (game === 'fifa4x4' || game === 'fifa3x3') ? 8 : 5);
 
-  const maxGoals = game === 'fifa4x4' ? 10 : 6;
+  const maxGoals = (game === 'fifa4x4' || game === 'fifa3x3') ? 10 : 6;
   let pHome = 0, pDraw = 0, pAway = 0;
   const scoreProbs = [];
   for (let hg = 0; hg <= maxGoals; hg++) {
@@ -8010,7 +8016,7 @@ function runH2H(game, home, away, meta = {}) {
 // Bascule vers l'analyse IA du jeu choisi (depuis le H2H) + lance l'analyse
 function selectPronoForGame(game) {
   switchTab('prono');
-  const order = ['penalty18','penalty22','baccara','jeu21','fifa4x4','aviator'];
+  const order = ['penalty18','penalty22','baccara','jeu21','fifa4x4','fifa3x3','aviator'];
   const btns = document.querySelectorAll('#panel-prono .game-btn');
   const idx = order.indexOf(game);
   if (idx >= 0 && btns[idx]) selectPronoGame(game, btns[idx], true);
@@ -8044,6 +8050,7 @@ async function checkServer() {
       await fetchAndUpdate('penalty22');
       await fetchAndUpdate('jeu21');
       await fetchAndUpdate('fifa4x4');
+      await fetchAndUpdate('fifa3x3');
       await fetchAndUpdate('aviator');
       await fetchUpcomingAndUpdate('fifa4x4');
       await fetchUpcomingAndUpdate('penalty18');
@@ -8083,6 +8090,7 @@ function startPolling() {
       if (await fetchAndUpdate('penalty22')) successCount++;
       if (await fetchAndUpdate('jeu21'))     successCount++;
       if (await fetchAndUpdate('fifa4x4'))   successCount++;
+      if (await fetchAndUpdate('fifa3x3'))   successCount++;
       if (await fetchAndUpdate('aviator'))   successCount++;
       await fetchUpcomingAndUpdate('fifa4x4');
       await fetchUpcomingAndUpdate('penalty18');
@@ -8427,8 +8435,9 @@ async function fetchAndUpdate(game) {
         dealerCards: dCards,
       };
     }).slice(0, DATA_FETCH_LIMIT);
-  } else if (game === 'fifa4x4') {
-    DATA.fifa4x4 = data.map(r => ({
+  } else if (game === 'fifa4x4' || game === 'fifa3x3') {
+    // FIFA 3×3 partage exactement le format du 4×4 (équipes + score).
+    DATA[game] = data.map(r => ({
       n:     r.n,
       home:  translateTeamFR(r.home  || r.team1 || '—'),
       away:  translateTeamFR(r.away  || r.team2 || '—'),
@@ -8785,6 +8794,7 @@ async function fetchAndUpdate(game) {
       { key:'baccara',   label:'Baccara',    color:t.accent2 },
       { key:'jeu21',     label:'Jeu 21',     color:t.gold },
       { key:'fifa4x4',   label:'FIFA 4×4',   color:'#ff5cf3' },
+      { key:'fifa3x3',   label:'FIFA 3×3',   color:'#ffd24a' },
       { key:'aviator',   label:'Aviator',    color:'#e50539' }
     ];
     const counts = games.map(g => (DATA[g.key] || []).length);
@@ -8838,7 +8848,7 @@ async function fetchAndUpdate(game) {
     if (!cv) return;
     const t = chartTheme();
     const DATA = window.DATA || {};
-    const games = ['penalty18','penalty22','baccara','jeu21','fifa4x4','aviator'];
+    const games = ['penalty18','penalty22','baccara','jeu21','fifa4x4','fifa3x3','aviator'];
     const labels = ['Penalty 18','Penalty 22','Baccara','Jeu 21','FIFA 4×4','Aviator','Aviator'];
 
     // Volume (normalisé sur 100) + confiance moyenne historique
@@ -8998,6 +9008,7 @@ async function fetchAndUpdate(game) {
       { k:'baccara',   label:'Baccara',    icon:'🃏' },
       { k:'jeu21',     label:'Jeu 21',     icon:'🃏' },
       { k:'fifa4x4',   label:'FIFA 4×4',   icon:'⚽' },
+      { k:'fifa3x3',   label:'FIFA 3×3',   icon:'⚽' },
       { k:'aviator',   label:'Aviator',    icon:'✈️' }
     ];
 
@@ -9046,7 +9057,7 @@ async function fetchAndUpdate(game) {
     hist.forEach(h => { if (h.hadar && h.hadar.confidence) confs.push(h.hadar.confidence); });
     if (confs.length === 0 && typeof hadarAI === 'function') {
       // Calcul à la volée si aucune analyse n'a été lancée
-      ['penalty18','penalty22','baccara','jeu21','fifa4x4','aviator'].forEach(g => {
+      ['penalty18','penalty22','baccara','jeu21','fifa4x4','fifa3x3','aviator'].forEach(g => {
         if ((DATA[g] || []).length >= 3) {
           const r = hadarAI(g, DATA[g]);
           if (r) confs.push(r.confidence);
@@ -9058,7 +9069,7 @@ async function fetchAndUpdate(game) {
       : 0;
 
     // Prédictions actives = jeux avec au moins 3 résultats
-    const active = ['penalty18','penalty22','baccara','jeu21','fifa4x4','aviator']
+    const active = ['penalty18','penalty22','baccara','jeu21','fifa4x4','fifa3x3','aviator']
       .filter(g => (DATA[g] || []).length >= 3).length;
 
     animateCounter(document.getElementById('kpi-analyses'),  totalAnalyses, '', 1000);

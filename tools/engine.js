@@ -254,6 +254,9 @@ const GAME_CFG = {
   penalty18: { kind: 'team', noDraw: true,  maxGoals: 8,  k: 28, homeAdv: 45 },
   penalty22: { kind: 'team', noDraw: true,  maxGoals: 8,  k: 28, homeAdv: 45 },
   fifa4x4:   { kind: 'team', noDraw: false, maxGoals: 12, k: 24, homeAdv: 35 },
+  // FIFA 3×3 : profil mesuré sur 1745 matchs — nuls 11,1 %, 7,2 buts/équipe,
+  // maximum observé 17. Très proche du 4×4, mêmes paramètres.
+  fifa3x3:   { kind: 'team', noDraw: false, maxGoals: 12, k: 24, homeAdv: 35 },
   baccara:   { kind: 'baccara' },
   jeu21:     { kind: 'jeu21' },
 };

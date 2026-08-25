@@ -75,7 +75,7 @@ console.log('╚═════════════════════�
 
 const report = {};
 
-for (const game of ['penalty18', 'penalty22', 'fifa4x4', 'baccara', 'jeu21']) {
+for (const game of ['penalty18', 'penalty22', 'fifa4x4', 'fifa3x3', 'baccara', 'jeu21']) {
   const rows = load(game);
   if (rows.length < 60) continue;
   const cfg = GAME_CFG[game];

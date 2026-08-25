@@ -16,6 +16,7 @@ const CHANNELS = {
   penalty22: 'statistika_fifa_penalty_fast2022',
   jeu21:     'statistika_21f',
   fifa4x4:   'statistika_fifa_4x4',
+  fifa3x3:   'fifa_3_3_fast',
 };
 
 const OUT_DIR = path.join(__dirname, '..', 'data');
@@ -127,7 +128,7 @@ function parseFifa4x4(text, ts, msgId) {
 
 const PARSERS = {
   baccara: parseBaccara, penalty18: parsePenalty, penalty22: parsePenalty,
-  jeu21: parseJeu21, fifa4x4: parseFifa4x4,
+  jeu21: parseJeu21, fifa4x4: parseFifa4x4, fifa3x3: parseFifa4x4,
 };
 
 async function harvest(game, maxPages) {

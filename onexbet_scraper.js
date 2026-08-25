@@ -338,6 +338,7 @@ class OneXBetScraper {
     // Les matchs à venir et en cours sont tous listés sur la page live.
     const gameSlugs = {
       fifa4x4:   '2648573-fc-24-4x4-england-championship',
+      fifa3x3:   '2860561-fc-25-3x3-conference-league',
       penalty18: '1939256-fifa18-penalty',
       penalty22: '2334988-fifa22-penalty',
     };
@@ -386,7 +387,7 @@ class OneXBetScraper {
   }
 
   _championnat(game) {
-    return { fifa4x4: '2648573', penalty18: '1939256', penalty22: '2334988' }[game] || '';
+    return { fifa4x4: '2648573', fifa3x3: '2860561', penalty18: '1939256', penalty22: '2334988' }[game] || '';
   }
 
   _fetchJson(url) {

@@ -295,3 +295,43 @@ score exact.
 > ⚠️ **Ce correctif rend les scores réalistes, pas prévisibles.** Les 5 jeux
 > restent statistiquement indépendants (cf. §Backtest) : aucun score exact n'est
 > prédictible de façon rentable. Le gain est la fin d'un artefact trompeur.
+
+---
+
+## 19. ➕ Nouveau jeu : FIFA 3×3 (Ligue de conférence FC25)
+
+**Sources fournies par l'utilisateur :**
+- Historique : `t.me/fifa_3_3_fast`
+- Calendrier : championnat 1xBet `2860561` (FC 25. 3x3. Ligue de conférence)
+
+**Format identique au FIFA 4×4** (ligne équipes + ligne score, appariées) : le
+parseur `parseFifa4x4` est réutilisé plutôt que dupliqué. Toutes les branches
+`game === 'fifa4x4'` ont été généralisées aux deux jeux.
+
+**Profil mesuré (1745 matchs) :**
+
+| | FIFA 3×3 | FIFA 4×4 |
+|---|---|---|
+| Domicile / Nul / Extérieur | 42,1 / 11,1 / 46,9 % | 44,0 / 9,2 / 46,8 % |
+| Buts moyens par équipe | 7,15 – 7,30 | 6,98 – 7,01 |
+| Maximum observé | 17 | 17 |
+
+Profils quasi identiques ⇒ mêmes paramètres Elo (`k: 24`, `homeAdv: 35`,
+`maxGoals: 12`) et même seuil de buts. Décision fondée sur mesure, pas sur analogie.
+
+**Backtest :** « fréquence de base » gagnante, Brier 0,5916, **+11,27 % vs hasard**.
+**Indépendance confirmée** (χ² = 0,622 ; p = 0,96) — comme les 5 autres jeux.
+
+**Traduction des équipes.** Le 3×3 oppose des clubs européens absents de la table
+(le 4×4 est anglais). 13 noms cyrilliques ajoutés (Ницца→Nice, Лилль→Lille,
+Базель→Bâle…), **alignés sur les libellés renvoyés par l'API 1xBet** pour que la
+rencontre annoncée soit reliée à l'historique de l'équipe. Vérifié : aucune équipe
+du calendrier n'est orpheline.
+
+**Défaut corrigé en cours d'intégration.** `fetchAndUpdate()` possède une branche
+par jeu ; `fifa3x3` tombait dans le cas générique et l'interface affichait
+0 résultat — le mini-pronostic inventait alors un score « 1-0 » sans rapport avec
+un jeu à ~7 buts par équipe. Branche partagée avec le 4×4 + ajout aux deux boucles
+de chargement.
+
+**Points de câblage : 14 (serveur) · 2 (scraper) · 25 (interface) · 3 (outils).**
