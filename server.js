@@ -704,6 +704,9 @@ async function pollAll() {
     // Pause de 3 secondes entre chaque canal (sauf après le dernier)
     if (i < entries.length - 1) await sleep(3000);
   }
+  // Horodatage exposé par /health : permet de voir si la collecte tourne
+  // encore, même quand le serveur répond correctement aux requêtes HTTP.
+  global.__derniereCollecte = new Date().toISOString();
 }
 
 
@@ -891,6 +894,28 @@ app.get('/sync', async (req, res) => {
 });
 
 // ── API REST ─────────────────────────────────────────────────
+// ── Sonde de santé (utilisée par Railway) ────────────────────────
+// Railway interroge cette route : si elle ne répond plus (serveur figé,
+// event-loop bloqué), la plateforme redémarre le conteneur automatiquement.
+// Sans elle, un process vivant mais bloqué restait en ligne indéfiniment.
+app.get('/health', (req, res) => {
+  const up = process.uptime();
+  const mem = process.memoryUsage();
+  const mo = n => Math.round(n / 1048576);
+  // Au-delà de ~420 Mo de tas, on signale un état dégradé : Railway
+  // redémarre alors avant le plantage par saturation mémoire.
+  const heap = mo(mem.heapUsed);
+  const degrade = heap > 420;
+  res.status(degrade ? 503 : 200).json({
+    status: degrade ? 'degraded' : 'ok',
+    uptimeSec: Math.round(up),
+    uptimeH: Math.round(up / 360) / 10,
+    heapMo: heap,
+    rssMo: mo(mem.rss),
+    derniereCollecte: global.__derniereCollecte || null
+  });
+});
+
 app.get('/upcoming/:game', async (req, res) => {
   const game = req.params.game;
   if (!UPCOMING_GAMES.includes(game)) {
@@ -1587,13 +1612,45 @@ app.post('/api/groq-analyze', async (req, res) => {
 });
 
 // ── Gestion des erreurs globales ─────────────────────────────────
-process.on('uncaughtException', (err) => {
-  console.error('🚨 ERREUR CRITIQUE NON GÉRÉE:', err);
-  // On ne quitte pas le processus pour rester résilient, mais on logge l'erreur
+// 🔴 CORRECTIF « le site meurt après ~24 h ».
+// Avant : on interceptait uncaughtException SANS quitter. Après une erreur
+// grave, Node continuait de tourner dans un état corrompu (handles fermés,
+// timers morts) : le process restait « vivant » pour Railway, donc la
+// politique ON_FAILURE ne se déclenchait JAMAIS et rien n'était redémarré.
+// L'application semblait en ligne mais ne diffusait plus rien.
+//
+// Désormais : on logge, on ferme proprement, puis on sort en code 1.
+// Railway relance immédiatement un process sain (redémarrage ~10 s).
+let arretEnCours = false;
+function arretPropre(motif, err) {
+  if (arretEnCours) return;
+  arretEnCours = true;
+  console.error(`🚨 ${motif} — arrêt volontaire pour laisser Railway redémarrer proprement.`);
+  if (err) console.error(err && err.stack ? err.stack : err);
+  try { if (typeof httpServer !== 'undefined' && httpServer) httpServer.close(); } catch (_) {}
+  // Délai court : laisse le temps d'écrire les logs, sans bloquer le redémarrage.
+  // ⚠️ PAS de .unref() ici : un timer « unref » n'empêche pas Node de sortir
+  //    tout seul avec le code 0 — le process mourait alors sans signaler
+  //    d'échec, et Railway ne redémarrait pas. Vérifié : sans unref, on sort
+  //    bien en code 1, ce qui déclenche le redémarrage.
+  setTimeout(() => process.exit(1), 1500);
+}
+
+process.on('uncaughtException', (err) => arretPropre('ERREUR CRITIQUE NON GÉRÉE', err));
+
+process.on('unhandledRejection', (reason) => {
+  // Une promesse rejetée n'implique pas forcément un état corrompu
+  // (ex. appel réseau échoué) : on logge sans tuer le serveur.
+  console.error('⚠️ Promesse non gérée au rejet:', reason);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('⚠️ Promesse non gérée au rejet:', reason);
+// Arrêt demandé par la plateforme (redéploiement, mise à l'échelle).
+['SIGTERM', 'SIGINT'].forEach(sig => {
+  process.on(sig, () => {
+    console.log(`↩️  Signal ${sig} reçu — fermeture propre.`);
+    try { if (typeof httpServer !== 'undefined' && httpServer) httpServer.close(); } catch (_) {}
+    setTimeout(() => process.exit(0), 800);
+  });
 });
 
 // Port fourni via process.env.PORT (Railway, etc.), 3000 par défaut en local.
