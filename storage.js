@@ -10,11 +10,46 @@ const path = require('path');
 const crypto = require('crypto');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const REPO_DATA_DIR = path.join(__dirname, 'data');
 
 // Assure que le dossier data/ existe
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
+
+// ── Auto-amorçage du volume Railway ───────────────────────────
+// Si DATA_DIR pointe vers un volume (ex: /data) vide au premier déploiement,
+// on copie l'historique commité dans le dépôt (REPO_DATA_DIR) pour ne pas repartir à 0.
+// Sans cela, /data vide → compteurs retombent à ~20-50 après chaque redeploy.
+(function amorcerVolumeSiVide() {
+  try {
+    if (DATA_DIR === REPO_DATA_DIR) return; // pas de volume, rien à faire
+    const jeux = ['baccara','penalty18','penalty22','jeu21','fifa4x4','fifa3x3'];
+    const volumeVide = !jeux.some(j => fs.existsSync(path.join(DATA_DIR, `${j}.json`)));
+    const repoAData = jeux.some(j => fs.existsSync(path.join(REPO_DATA_DIR, `${j}.json`)));
+    if (volumeVide && repoAData) {
+      console.log(`[storage] Volume ${DATA_DIR} vide → copie de l'historique depuis ${REPO_DATA_DIR}`);
+      let copies = 0;
+      for (const j of jeux) {
+        const src = path.join(REPO_DATA_DIR, `${j}.json`);
+        const dst = path.join(DATA_DIR, `${j}.json`);
+        if (fs.existsSync(src) && !fs.existsSync(dst)) {
+          fs.copyFileSync(src, dst);
+          copies++;
+        }
+      }
+      // aussi backtest/significance si présents
+      for (const f of ['backtest.json','significance.json']) {
+        const src = path.join(REPO_DATA_DIR, f);
+        const dst = path.join(DATA_DIR, f);
+        if (fs.existsSync(src) && !fs.existsSync(dst)) { fs.copyFileSync(src, dst); copies++; }
+      }
+      if (copies) console.log(`[storage] ✅ ${copies} fichier(s) copié(s) vers ${DATA_DIR}`);
+    }
+  } catch (e) {
+    console.warn('[storage] Amorçage volume échoué:', e.message);
+  }
+})();
 
 // Cache en mémoire pour éviter les lectures disque à chaque requête
 const cache = {};
