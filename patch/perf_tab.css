@@ -1,0 +1,56 @@
+
+/* ══════════════════════════════════════════
+   ONGLET PERFORMANCE — backtest réel
+══════════════════════════════════════════ */
+.perf-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.perf-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px}
+.perf-card .k{font-size:9px;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);margin-bottom:6px}
+.perf-card .v{font-size:24px;font-weight:800;color:var(--accent);line-height:1.1}
+.perf-card .d{font-size:10px;color:var(--muted);margin-top:4px}
+.perf-alert{background:linear-gradient(135deg,rgba(255,77,109,.11),rgba(245,166,35,.06));
+  border:1px solid rgba(255,77,109,.3);border-left:3px solid #ff4d6d;border-radius:12px;padding:14px 16px;margin-bottom:18px}
+.perf-alert h3{color:#ff4d6d;font-size:13px;margin:0 0 6px}
+.perf-alert p{font-size:12.5px;color:var(--text);line-height:1.65;margin:0}
+.perf-game{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:16px;margin-bottom:16px}
+.perf-ghead{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.perf-gtitle{font-size:16px;font-weight:700;color:var(--text)}
+.perf-gmeta{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',ui-monospace,monospace}
+.perf-dist{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.perf-pill{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.22);color:#7fdcff;
+  border-radius:20px;padding:3px 10px;font-size:10.5px;font-family:'JetBrains Mono',ui-monospace,monospace}
+.perf-badge{font-size:11.5px;padding:8px 12px;border-radius:9px;margin-bottom:10px;line-height:1.55}
+.perf-badge.ok{background:rgba(0,255,157,.08);border:1px solid rgba(0,255,157,.26);color:var(--accent)}
+.perf-badge.warn{background:rgba(245,166,35,.09);border:1px solid rgba(245,166,35,.3);color:var(--gold)}
+.perf-verdict{font-size:12.5px;padding:11px 14px;border-radius:10px;margin-bottom:12px;line-height:1.65}
+.perf-verdict.bad{background:rgba(255,77,109,.08);border-left:3px solid #ff4d6d;color:#ffc4ce}
+.perf-verdict.ok{background:rgba(0,255,157,.06);border-left:3px solid var(--accent);color:#b6ffe2}
+.perf-verdict strong{color:var(--text)}
+table.perf-t{width:100%;border-collapse:collapse;font-size:12px}
+table.perf-t th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);
+  padding:6px 8px;border-bottom:1px solid var(--border2);font-weight:600}
+table.perf-t td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
+table.perf-t .num{text-align:right;font-family:'JetBrains Mono',ui-monospace,monospace}
+table.perf-t tr.best td{background:rgba(0,255,157,.05)}
+table.perf-t tr.bad td{background:rgba(255,77,109,.05)}
+table.perf-t.sm{font-size:11px;margin-top:8px}
+.perf-chip{display:inline-block;font-size:8.5px;text-transform:uppercase;letter-spacing:.6px;
+  padding:2px 6px;border-radius:5px;margin-left:5px;vertical-align:middle;font-weight:700}
+.perf-chip.ok{background:rgba(0,255,157,.16);color:var(--accent)}
+.perf-chip.old{background:rgba(255,77,109,.16);color:#ff8fa3}
+.perf-chip.ref{background:rgba(255,255,255,.08);color:var(--muted)}
+.perf-bw{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:7px}
+.perf-bb{height:14px;border-radius:4px;background:rgba(125,141,166,.26);flex-shrink:1}
+.perf-bb.best{background:linear-gradient(90deg,rgba(0,255,157,.35),rgba(0,255,157,.6))}
+.perf-bb.bad{background:linear-gradient(90deg,rgba(255,77,109,.3),rgba(255,77,109,.55))}
+.perf-bw span{min-width:48px;text-align:right}
+table.perf-t .warn{color:var(--gold)}
+table.perf-t .okc{color:var(--accent)}
+.perf-det{margin-top:11px;border-top:1px solid var(--border2);padding-top:10px}
+.perf-det summary{cursor:pointer;font-size:11.5px;color:#7fdcff;user-select:none}
+.perf-note{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:12px;
+  padding:15px 17px;margin-top:18px;font-size:12px;color:var(--muted);line-height:1.7}
+.perf-note h3{color:#00d4ff;font-size:13px;margin:0 0 8px}
+.perf-note strong{color:var(--text)}
+.perf-note ul{margin:8px 0 0 18px;padding:0}
+.perf-note li{margin-bottom:5px}
+.perf-foot{margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.05);font-size:10.5px}

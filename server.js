@@ -890,9 +890,21 @@ async function hourlySync() {
 }
 if (cron) {
   cron.schedule('0 * * * *', hourlySync);
+  // ── Redémarrage quotidien automatique : évite le clic « Redeploy » manuel chaque jour
+  // À 04:00 (heure de Porto-Novo), le serveur s'arrête proprement en code 1.
+  // Railway (restartPolicyType: ALWAYS + healthcheck) le relance en ~10 secondes.
+  cron.schedule('0 4 * * *', () => arretPropre('REDÉMARRAGE QUOTIDIEN PROGRAMMÉ — cycle 24h'), { timezone: 'Africa/Porto-Novo' });
+  console.log('⏰ Redémarrage quotidien programmé : tous les jours à 04:00 (Africa/Porto-Novo)');
 } else {
   console.warn('⚠️ node-cron absent : synchronisation horaire via setInterval (60 min).');
   setInterval(hourlySync, 60 * 60 * 1000);
+  // Repli sans node-cron : redémarrage quotidien via timer (vérif chaque minute)
+  setInterval(() => {
+    const now = new Date();
+    // 04:00 Porto-Novo = 03:00 UTC (WAT UTC+1 sans DST)
+    const utcH = now.getUTCHours(), utcM = now.getUTCMinutes();
+    if (utcH === 3 && utcM === 0) arretPropre('REDÉMARRAGE QUOTIDIEN PROGRAMMÉ — cycle 24h (fallback)');
+  }, 60 * 1000);
 }
 
 // ── Endpoint de Synchronisation Manuelle ──────────────────────────────────────────
