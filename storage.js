@@ -22,13 +22,12 @@ if (!fs.existsSync(DATA_DIR)) {
 // (ex: 38 entrées après un redeploy sans historique), on restaure l'historique
 // commité dans le dépôt (REPO_DATA_DIR) qui contient 3000-4000 entrées.
 // Sans cela, /data vide → compteurs retombent à ~20-50 après chaque redeploy.
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-const REPO_DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) { fs.mkdirSync(DATA_DIR, { recursive: true }); }
 (function amorcerVolumeSiVide() {
   try {
-    if (DATA_DIR === REPO_DATA_DIR) return;
+    if (DATA_DIR === REPO_DATA_DIR) return; // pas de volume, rien à faire
     const jeux = ['baccara','penalty18','penalty22','jeu21','fifa4x4','fifa3x3'];
+    // On considère le volume comme à restaurer si AU MOINS un jeu est vide
+    // ou très incomplet (< 500) alors que le dépôt a un historique complet (> 1000)
     let besoinRestauration = false;
     for (const j of jeux) {
       const dst = path.join(DATA_DIR, `${j}.json`);
@@ -41,7 +40,9 @@ if (!fs.existsSync(DATA_DIR)) { fs.mkdirSync(DATA_DIR, { recursive: true }); }
       if (!fs.existsSync(dst) && srcLen > 0) { besoinRestauration = true; break; }
     }
     if (!besoinRestauration) return;
-    console.log(`[storage] Volume ${DATA_DIR} ? restauration depuis ${REPO_DATA_DIR}`);
+    const volumeVide = !jeux.some(j => fs.existsSync(path.join(DATA_DIR, `${j}.json`)));
+    console.log(`[storage] Volume ${DATA_DIR} ${volumeVide ? 'vide' : 'incomplet (38-110 entrées)'} → restauration depuis ${REPO_DATA_DIR}`);
+    let copies = 0;
     for (const j of jeux) {
       const src = path.join(REPO_DATA_DIR, `${j}.json`);
       const dst = path.join(DATA_DIR, `${j}.json`);
@@ -49,12 +50,24 @@ if (!fs.existsSync(DATA_DIR)) { fs.mkdirSync(DATA_DIR, { recursive: true }); }
       let srcLen = 0, dstLen = 0;
       try { srcLen = JSON.parse(fs.readFileSync(src,'utf8')).length; } catch(_) {}
       try { dstLen = fs.existsSync(dst) ? JSON.parse(fs.readFileSync(dst,'utf8')).length : 0; } catch(_) {}
+      // Copie si destination vide OU beaucoup plus petite que la source
       if (!fs.existsSync(dst) || (srcLen > 1000 && dstLen < 500)) {
         fs.copyFileSync(src, dst);
-        console.log(`[storage] ? ${j}.json : ${dstLen} ? ${srcLen}`);
+        console.log(`[storage] ↳ ${j}.json : ${dstLen} → ${srcLen} entrées`);
+        copies++;
       }
     }
-  } catch (e) { console.warn('[storage] Amor�age �chou�:', e.message); }
+    for (const f of ['backtest.json','significance.json']) {
+      const src = path.join(REPO_DATA_DIR, f);
+      const dst = path.join(DATA_DIR, f);
+      if (fs.existsSync(src) && (!fs.existsSync(dst) || fs.statSync(dst).size < fs.statSync(src).size)) {
+        fs.copyFileSync(src, dst); copies++;
+      }
+    }
+    if (copies) console.log(`[storage] ✅ ${copies} fichier(s) restauré(s) vers ${DATA_DIR}`);
+  } catch (e) {
+    console.warn('[storage] Amorçage volume échoué:', e.message);
+  }
 })();
 
 // Cache en mémoire pour éviter les lectures disque à chaque requête
