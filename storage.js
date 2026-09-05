@@ -18,34 +18,53 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 // ── Auto-amorçage du volume Railway ───────────────────────────
-// Si DATA_DIR pointe vers un volume (ex: /data) vide au premier déploiement,
-// on copie l'historique commité dans le dépôt (REPO_DATA_DIR) pour ne pas repartir à 0.
+// Si DATA_DIR pointe vers un volume (ex: /data) vide OU partiellement rempli
+// (ex: 38 entrées après un redeploy sans historique), on restaure l'historique
+// commité dans le dépôt (REPO_DATA_DIR) qui contient 3000-4000 entrées.
 // Sans cela, /data vide → compteurs retombent à ~20-50 après chaque redeploy.
 (function amorcerVolumeSiVide() {
   try {
     if (DATA_DIR === REPO_DATA_DIR) return; // pas de volume, rien à faire
     const jeux = ['baccara','penalty18','penalty22','jeu21','fifa4x4','fifa3x3'];
-    const volumeVide = !jeux.some(j => fs.existsSync(path.join(DATA_DIR, `${j}.json`)));
-    const repoAData = jeux.some(j => fs.existsSync(path.join(REPO_DATA_DIR, `${j}.json`)));
-    if (volumeVide && repoAData) {
-      console.log(`[storage] Volume ${DATA_DIR} vide → copie de l'historique depuis ${REPO_DATA_DIR}`);
-      let copies = 0;
-      for (const j of jeux) {
-        const src = path.join(REPO_DATA_DIR, `${j}.json`);
-        const dst = path.join(DATA_DIR, `${j}.json`);
-        if (fs.existsSync(src) && !fs.existsSync(dst)) {
-          fs.copyFileSync(src, dst);
-          copies++;
-        }
-      }
-      // aussi backtest/significance si présents
-      for (const f of ['backtest.json','significance.json']) {
-        const src = path.join(REPO_DATA_DIR, f);
-        const dst = path.join(DATA_DIR, f);
-        if (fs.existsSync(src) && !fs.existsSync(dst)) { fs.copyFileSync(src, dst); copies++; }
-      }
-      if (copies) console.log(`[storage] ✅ ${copies} fichier(s) copié(s) vers ${DATA_DIR}`);
+    // On considère le volume comme à restaurer si AU MOINS un jeu est vide
+    // ou très incomplet (< 500) alors que le dépôt a un historique complet (> 1000)
+    let besoinRestauration = false;
+    for (const j of jeux) {
+      const dst = path.join(DATA_DIR, `${j}.json`);
+      const src = path.join(REPO_DATA_DIR, `${j}.json`);
+      if (!fs.existsSync(src)) continue;
+      let srcLen = 0, dstLen = 0;
+      try { srcLen = JSON.parse(fs.readFileSync(src,'utf8')).length; } catch(_) {}
+      try { dstLen = fs.existsSync(dst) ? JSON.parse(fs.readFileSync(dst,'utf8')).length : 0; } catch(_) {}
+      if (srcLen > 1000 && dstLen < 500) { besoinRestauration = true; break; }
+      if (!fs.existsSync(dst) && srcLen > 0) { besoinRestauration = true; break; }
     }
+    if (!besoinRestauration) return;
+    const volumeVide = !jeux.some(j => fs.existsSync(path.join(DATA_DIR, `${j}.json`)));
+    console.log(`[storage] Volume ${DATA_DIR} ${volumeVide ? 'vide' : 'incomplet (38-110 entrées)'} → restauration depuis ${REPO_DATA_DIR}`);
+    let copies = 0;
+    for (const j of jeux) {
+      const src = path.join(REPO_DATA_DIR, `${j}.json`);
+      const dst = path.join(DATA_DIR, `${j}.json`);
+      if (!fs.existsSync(src)) continue;
+      let srcLen = 0, dstLen = 0;
+      try { srcLen = JSON.parse(fs.readFileSync(src,'utf8')).length; } catch(_) {}
+      try { dstLen = fs.existsSync(dst) ? JSON.parse(fs.readFileSync(dst,'utf8')).length : 0; } catch(_) {}
+      // Copie si destination vide OU beaucoup plus petite que la source
+      if (!fs.existsSync(dst) || (srcLen > 1000 && dstLen < 500)) {
+        fs.copyFileSync(src, dst);
+        console.log(`[storage] ↳ ${j}.json : ${dstLen} → ${srcLen} entrées`);
+        copies++;
+      }
+    }
+    for (const f of ['backtest.json','significance.json']) {
+      const src = path.join(REPO_DATA_DIR, f);
+      const dst = path.join(DATA_DIR, f);
+      if (fs.existsSync(src) && (!fs.existsSync(dst) || fs.statSync(dst).size < fs.statSync(src).size)) {
+        fs.copyFileSync(src, dst); copies++;
+      }
+    }
+    if (copies) console.log(`[storage] ✅ ${copies} fichier(s) restauré(s) vers ${DATA_DIR}`);
   } catch (e) {
     console.warn('[storage] Amorçage volume échoué:', e.message);
   }
