@@ -207,9 +207,16 @@ const storage = {
    */
   addResult(game, result) {
     const existing = this.getResults(game);
-    // Éviter les doublons par numéro (n)
-    if (existing.some(r => r.n === result.n)) {
-      console.log(`[storage] Doublon détecté #N${result.n} pour ${game} — ignoré`);
+    // ✅ CORRECTIF 288/1440 : ne JAMAIS dédupliquer par #N (r.n) car il se réinitialise
+    // Penalty 288→1, Baccara 1440→1 : le #N=1 du lendemain était considéré comme doublon du #N=1 de la veille et ignoré.
+    // On déduplique par msgId (unique et croissant) comme dans mergeResults et harvest.js
+    const key = result.msgId != null ? `m:${result.msgId}` : (result.n != null ? `n:${result.n}` : null);
+    const isDuplicate = key != null && existing.some(r => {
+      const k = r.msgId != null ? `m:${r.msgId}` : (r.n != null ? `n:${r.n}` : null);
+      return k === key;
+    });
+    if (isDuplicate) {
+      console.log(`[storage] Doublon détecté ${key} pour ${game} — ignoré`);
       return;
     }
     existing.unshift(result); // le plus récent en premier
