@@ -8649,8 +8649,10 @@ async function fetchAndUpdate(game) {
     if (REDUCE) return;
     document.body.addEventListener('mousemove', (e) => {
       const target = e.target.closest('.card-3d');
-      if (!target) return;
+      if (!target || !target.getBoundingClientRect) return;
       const rect = target.getBoundingClientRect();
+      // fix: clientWidth → garde-fou si l'élément est caché (width/height = 0) → évite NaN/division par 0
+      if (!rect || !rect.width || !rect.height) return;
       const mx = ((e.clientX - rect.left) / rect.width)  * 100;
       const my = ((e.clientY - rect.top)  / rect.height) * 100;
       target.style.setProperty('--mx', mx + '%');
