@@ -1,0 +1,35 @@
+# Render — configuration prête pour HADAR
+# Ce fichier permet à Render de configurer l'application tout seul.
+# Tu n'as rien à installer : Render lit ce fichier automatiquement.
+
+services:
+  - type: web
+    name: hadar-betanalytics
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    buildCommand: npm install --omit=optional
+    startCommand: node server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: ADMIN_USER
+        value: HADAR_ADMIN
+      - key: ADMIN_PASS
+        sync: false          # à saisir dans l'interface Render (jamais dans le fichier)
+      - key: GROQ_API_KEY
+        sync: false
+      - key: MAX_RESULTS
+        value: "5000"
+      - key: PUPPETEER_ENABLED
+        value: "false"
+      - key: ONEXBET_BASE_URL
+        value: https://1xbet.bj
+      - key: ALLOWED_ORIGINS
+        value: ""
+      # Pas de DATA_DIR ici : sur le plan gratuit Render n'a pas de disque.
+      # L'application démarre avec l'historique déjà présent dans le dossier data/
+      # du dépôt (19 700 résultats) puis ajoute les nouveaux.
