@@ -17,6 +17,16 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+// ── Helpers de lecture (formats tolérés) ─────────────────────
+function normaliserListe(v) {
+  if (Array.isArray(v)) return v;
+  if (v && Array.isArray(v.value))   return v.value;
+  if (v && Array.isArray(v.results)) return v.results;
+  if (v && Array.isArray(v.data))    return v.data;
+  return [];
+}
+function compterEntrees(v) { return normaliserListe(v).length; }
+
 // ── Auto-amorçage du volume Railway ───────────────────────────
 // Si DATA_DIR pointe vers un volume (ex: /data) vide OU partiellement rempli
 // (ex: 38 entrées après un redeploy sans historique), on restaure l'historique
@@ -34,8 +44,8 @@ if (!fs.existsSync(DATA_DIR)) {
       const src = path.join(REPO_DATA_DIR, `${j}.json`);
       if (!fs.existsSync(src)) continue;
       let srcLen = 0, dstLen = 0;
-      try { srcLen = JSON.parse(fs.readFileSync(src,'utf8')).length; } catch(_) {}
-      try { dstLen = fs.existsSync(dst) ? JSON.parse(fs.readFileSync(dst,'utf8')).length : 0; } catch(_) {}
+      try { srcLen = compterEntrees(JSON.parse(fs.readFileSync(src,'utf8').replace(/^\uFEFF/,''))); } catch(_) {}
+      try { dstLen = fs.existsSync(dst) ? compterEntrees(JSON.parse(fs.readFileSync(dst,'utf8').replace(/^\uFEFF/,''))) : 0; } catch(_) {}
       if (srcLen > 1000 && dstLen < 500) { besoinRestauration = true; break; }
       if (!fs.existsSync(dst) && srcLen > 0) { besoinRestauration = true; break; }
     }
@@ -48,8 +58,8 @@ if (!fs.existsSync(DATA_DIR)) {
       const dst = path.join(DATA_DIR, `${j}.json`);
       if (!fs.existsSync(src)) continue;
       let srcLen = 0, dstLen = 0;
-      try { srcLen = JSON.parse(fs.readFileSync(src,'utf8')).length; } catch(_) {}
-      try { dstLen = fs.existsSync(dst) ? JSON.parse(fs.readFileSync(dst,'utf8')).length : 0; } catch(_) {}
+      try { srcLen = compterEntrees(JSON.parse(fs.readFileSync(src,'utf8').replace(/^\uFEFF/,''))); } catch(_) {}
+      try { dstLen = fs.existsSync(dst) ? compterEntrees(JSON.parse(fs.readFileSync(dst,'utf8').replace(/^\uFEFF/,''))) : 0; } catch(_) {}
       // Copie si destination vide OU beaucoup plus petite que la source
       if (!fs.existsSync(dst) || (srcLen > 1000 && dstLen < 500)) {
         fs.copyFileSync(src, dst);
@@ -133,12 +143,17 @@ function gameFile(game) {
   return path.join(DATA_DIR, `${game}.json`);
 }
 
+// ✅ CORRECTIF 24/10 : accepte AUSSI le format produit par PowerShell.
+// `Invoke-RestMethod ... | ConvertTo-Json` écrit {"value":[...],"Count":N}
+// au lieu d'un simple tableau [...]. Avant ce correctif, l'application lisait
+// ce fichier, n'y trouvait pas de tableau et repartait de ZÉRO
+// (baccara 4187 → 2, penalty18 3412 → 0). On normalise donc à la lecture.
 function readGame(game) {
   try {
     const f = gameFile(game);
     if (fs.existsSync(f)) {
-      const raw = fs.readFileSync(f, 'utf8');
-      return JSON.parse(raw);
+      const raw = fs.readFileSync(f, 'utf8').replace(/^\uFEFF/, '');
+      return normaliserListe(JSON.parse(raw));
     }
   } catch (e) {
     console.warn(`[storage] Erreur lecture ${game}: ${e.message}`);
