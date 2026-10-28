@@ -805,12 +805,24 @@ if (process.env.CLEAR_DATA === '1') {
 // Amorce du compte admin (au premier démarrage) depuis storage.js
 storage.seedAdmin();
 
-pollAll();
-pollUpcomingAll();
-// Polling Telegram toutes les 30 secondes (plus lent pour éviter la surcharge mémoire sur Railway)
-setInterval(pollAll, 30000);
-// Calendrier bookmaker : toutes les 60 secondes (Puppeteer est lourd, on l'appelle moins souvent).
-setInterval(pollUpcomingAll, 60000);
+// ── GitHub comme disque persistant (hébergements SANS volume) ──
+// Si GITHUB_TOKEN est défini : on récupère d'abord l'historique le plus
+// récent depuis le dépôt, PUIS on démarre la collecte et la sauvegarde
+// automatique. Sans GITHUB_TOKEN, ce bloc ne fait rien du tout.
+const githubPersist = require('./github-persist');
+
+async function demarrerCollecte() {
+  try { await githubPersist.restaurerDepuisGitHub(); } catch (_) {}
+  pollAll();
+  pollUpcomingAll();
+  // Polling Telegram toutes les 30 secondes (plus lent pour éviter la surcharge mémoire sur Railway)
+  setInterval(pollAll, 30000);
+  // Calendrier bookmaker : toutes les 60 secondes (Puppeteer est lourd, on l'appelle moins souvent).
+  setInterval(pollUpcomingAll, 60000);
+  githubPersist.demarrerSauvegardePeriodique();
+}
+
+demarrerCollecte();
 
 // ── Logique de Synchronisation (Extrait pour être réutilisable) ──────────────────
 async function syncGame(game) {
