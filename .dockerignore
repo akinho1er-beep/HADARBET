@@ -1,0 +1,19 @@
+# Fichiers inutiles dans l'image Docker
+node_modules
+npm-debug.log*
+.git
+.gitignore
+backup
+patch
+*.zip
+*.log
+*.md
+scripts
+render.yaml
+railway.json
+
+# Sécurité : jamais dans l'image
+.env
+.env.*
+data/accounts.json
+data/sessions.json

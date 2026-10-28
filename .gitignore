@@ -18,3 +18,7 @@ backup/
 Thumbs.db
 *.log
 npm-debug.log*
+
+# recuperation temporaire
+*.avant-fix
+hadar-fix-storage*
